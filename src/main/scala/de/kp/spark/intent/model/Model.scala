@@ -30,7 +30,7 @@ case class ServiceResponse(
   service:String,task:String,data:Map[String,String],status:String
 )
 
-object Model {
+object Serializer {
     
   implicit val formats = Serialization.formats(NoTypeHints)
 
@@ -38,4 +38,38 @@ object Model {
   
   def deserializeRequest(request:String):ServiceRequest = read[ServiceRequest](request)
   
+}
+
+object Messages {
+
+  def GENERAL_ERROR(uid:String):String = String.format("""A general error appeared for uid '%s'.""", uid)
+  
+  def MODEL_BUILDING_STARTED(uid:String):String = String.format("""Intent building started for uid '%s'.""", uid)
+
+  def NO_PARAMETERS_PROVIDED(uid:String):String = String.format("""No parameters provided for uid '%s'.""", uid)
+
+  def NO_SOURCE_PROVIDED(uid:String):String = String.format("""No source provided for uid '%s'.""", uid)
+
+ def TASK_ALREADY_STARTED(uid:String):String = String.format("""The task with uid '%s' is already started.""", uid)
+
+  def TASK_DOES_NOT_EXIST(uid:String):String = String.format("""The task with uid '%s' does not exist.""", uid)
+
+  def TASK_IS_UNKNOWN(uid:String,task:String):String = String.format("""The task '%s' is unknown for uid '%s'.""", task, uid)
+  
+  def MISSING_PARAMETERS(uid:String):String = String.format("""Paramaters are missing for uid '%s'.""", uid)
+
+  def SOURCE_IS_UNKNOWN(uid:String,source:String):String = String.format("""Source '%s' is unknown for uid '%s'.""", source, uid)
+  
+}
+
+object IntentStatus {
+  
+  val DATASET:String = "dataset"
+    
+  val STARTED:String = "started"
+  val FINISHED:String = "finished"
+  
+  val FAILURE:String = "failure"
+  val SUCCESS:String = "success"
+    
 }

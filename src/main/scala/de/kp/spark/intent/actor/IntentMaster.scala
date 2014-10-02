@@ -27,6 +27,7 @@ import akka.actor.{OneForOneStrategy, SupervisorStrategy}
 import akka.routing.RoundRobinRouter
 
 import de.kp.spark.intent.Configuration
+import de.kp.spark.intent.model._
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
@@ -53,10 +54,42 @@ class IntentMaster extends Actor with ActorLogging {
       implicit val timeout:Timeout = DurationInt(duration).second
 	  	    
 	  val origin = sender
+
+	  val deser = Serializer.deserializeRequest(req)
+	  val response = deser.task.split(":")(0) match {
+
+	    case "get" => ask(questor,deser).mapTo[ServiceResponse]
+
+	    case "train"  => ask(builder,deser).mapTo[ServiceResponse]
+
+	    case "status" => ask(builder,deser).mapTo[ServiceResponse]
+       
+        case _ => {
+
+          Future {     
+            failure(deser,Messages.TASK_IS_UNKNOWN(deser.data("uid"),deser.task))
+          } 
+        
+        }
+      
+      }
+      response.onSuccess {
+        case result => origin ! Serializer.serializeResponse(result)
+      }
+      response.onFailure {
+        case result => origin ! failure(deser,Messages.GENERAL_ERROR(deser.data("uid")))	      
+	  }
       
     }
   
     case _ => {}
+    
+  }
+
+  private def failure(req:ServiceRequest,message:String):ServiceResponse = {
+    
+    val data = Map("uid" -> req.data("uid"), "message" -> message)
+    new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
     
   }
 
