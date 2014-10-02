@@ -29,10 +29,23 @@ case class ServiceRequest(
 case class ServiceResponse(
   service:String,task:String,data:Map[String,String],status:String
 )
+/*
+ * Service requests are mapped onto job descriptions and are stored
+ * in a Redis instance
+ */
+case class JobDesc(
+  service:String,task:String,status:String
+)
 
 object Serializer {
     
   implicit val formats = Serialization.formats(NoTypeHints)
+  /*
+   * Support for serialization and deserialization of job descriptions
+   */
+  def serializeJob(job:JobDesc):String = write(job)
+
+  def deserializeJob(job:String):JobDesc = read[JobDesc](job)
 
   def serializeResponse(response:ServiceResponse):String = write(response)
   
@@ -40,17 +53,36 @@ object Serializer {
   
 }
 
+object Algorithms {
+  
+  val MARKOV:String        = "MARKOV"
+  val HIDDEN_MARKOV:String = "HIDDEN_MARKOV"
+  
+}
+
+object Sources {
+  /* The names of the data source actually supported */
+  val FILE:String    = "FILE"
+  val ELASTIC:String = "ELASTIC" 
+  val JDBC:String    = "JDBC"    
+  val PIWIK:String   = "PIWIK"    
+}
+
 object Messages {
+
+  def ALGORITHM_IS_UNKNOWN(uid:String,algorithm:String):String = String.format("""Algorithm '%s' is unknown for uid '%s'.""", algorithm, uid)
 
   def GENERAL_ERROR(uid:String):String = String.format("""A general error appeared for uid '%s'.""", uid)
   
   def MODEL_BUILDING_STARTED(uid:String):String = String.format("""Intent building started for uid '%s'.""", uid)
+ 
+  def NO_ALGORITHM_PROVIDED(uid:String):String = String.format("""No algorithm provided for uid '%s'.""", uid)
 
   def NO_PARAMETERS_PROVIDED(uid:String):String = String.format("""No parameters provided for uid '%s'.""", uid)
 
   def NO_SOURCE_PROVIDED(uid:String):String = String.format("""No source provided for uid '%s'.""", uid)
 
- def TASK_ALREADY_STARTED(uid:String):String = String.format("""The task with uid '%s' is already started.""", uid)
+  def TASK_ALREADY_STARTED(uid:String):String = String.format("""The task with uid '%s' is already started.""", uid)
 
   def TASK_DOES_NOT_EXIST(uid:String):String = String.format("""The task with uid '%s' does not exist.""", uid)
 

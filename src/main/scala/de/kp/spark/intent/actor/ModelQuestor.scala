@@ -20,6 +20,8 @@ package de.kp.spark.intent.actor
 
 import akka.actor.{Actor,ActorLogging}
 
+import de.kp.spark.intent.model._
+
 class ModelQuestor extends Actor with ActorLogging {
 
   implicit val ec = context.dispatcher
@@ -27,6 +29,13 @@ class ModelQuestor extends Actor with ActorLogging {
   def receive = {
 
     case _ => {}
+    
+  }
+
+  private def failure(req:ServiceRequest,message:String):ServiceResponse = {
+    
+    val data = Map("uid" -> req.data("uid"), "message" -> message)
+    new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
     
   }
   
