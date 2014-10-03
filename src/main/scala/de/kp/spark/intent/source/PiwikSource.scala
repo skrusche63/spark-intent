@@ -23,31 +23,18 @@ import org.apache.spark.rdd.RDD
 
 import de.kp.spark.intent.model._
 
-class LoyaltySource(@transient sc:SparkContext) {
-
-  private val model = new LoyaltyModel()
+/**
+ * PiwikSource is an extension of the common JdbcSource that holds Piwik specific
+ * data about fields and types on the server side for convenience.
+ */
+class PiwikSource(@transient sc:SparkContext) extends JdbcSource(sc) {
   
-  def get(data:Map[String,String]):RDD[Behavior] = {
-
-    val source = data("source")
-    source match {
-
-      case Sources.ELASTIC => new ElasticSource(sc).loyalty(data)
-
-      case Sources.FILE => new FileSource(sc).loyalty(data)
-
-      case Sources.JDBC => new JdbcSource(sc).loyalty(data)
-
-      case Sources.PIWIK => new PiwikSource(sc).loyalty(data)
-            
-      case _ => null
-      
-    }
-    
+ override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):RDD[Behavior] = {
+    throw new Exception("Not implemented")
+  }
+  
+  override def purchases(params:Map[String,Any]):RDD[Behavior] = {
+    throw new Exception("Not implemented")
   }
 
-  def scaleDef = model.scaleDef
-  
-  def stateDefs = model.stateDefs
-  
 }

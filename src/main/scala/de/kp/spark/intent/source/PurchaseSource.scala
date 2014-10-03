@@ -28,8 +28,22 @@ class PurchaseSource(@transient sc:SparkContext) {
   private val model = new PurchaseModel()
   
   def get(data:Map[String,String]):RDD[Behavior] = {
-      // TODO
-      null
+
+    val source = data("source")
+    source match {
+
+      case Sources.ELASTIC => new ElasticSource(sc).purchases(data)
+
+      case Sources.FILE => new FileSource(sc).purchases(data)
+
+      case Sources.JDBC => new JdbcSource(sc).purchases(data)
+
+      case Sources.PIWIK => new PiwikSource(sc).purchases(data)
+            
+      case _ => null
+      
+    }
+    
   }
 
   def scaleDef = model.scaleDef
