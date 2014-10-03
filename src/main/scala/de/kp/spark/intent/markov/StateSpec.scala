@@ -1,4 +1,4 @@
-package de.kp.spark.intent.source
+package de.kp.spark.intent.markov
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -18,22 +18,10 @@ package de.kp.spark.intent.source
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
+abstract class StateSpec {
 
-import de.kp.spark.intent.model._
-
-class PurchaseSource(@transient sc:SparkContext) {
-
-  private val model = new PurchaseModel()
+  def scaleDef(): Int
   
-  def get(data:Map[String,String]):RDD[Behavior] = {
-      // TODO
-      null
-  }
-
-  def scaleDef = model.scaleDef
-  
-  def stateDefs = model.stateDefs
+  def stateDefs(): Array[String]
   
 }

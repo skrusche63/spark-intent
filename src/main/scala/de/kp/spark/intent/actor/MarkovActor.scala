@@ -27,6 +27,9 @@ import de.kp.spark.intent.{Configuration}
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.redis.RedisCache
 
+import de.kp.spark.intent.markov.MarkovBuilder
+import de.kp.spark.intent.source.PurchaseSource
+
 import scala.collection.JavaConversions._
 
 class MarkovActor extends Actor with SparkActor {
@@ -34,6 +37,8 @@ class MarkovActor extends Actor with SparkActor {
   /* Create Spark context */
   private val sc = createCtxLocal("MarkovActor",Configuration.spark)      
 
+  private def intents = Array(Intents.PURCHASE)
+  
   def receive = {
     
     case req:ServiceRequest => {
@@ -42,17 +47,31 @@ class MarkovActor extends Actor with SparkActor {
       val task = req.task
 
       val params = properties(req)
-
+      val missing = (params == null)
+      
       /* Send response to originator of request */
-      sender ! response(req, (params == 0.0))
+      sender ! response(req, missing)
 
-      if (params != null) {
+      if (missing == false) {
         /* Register status */
         RedisCache.addStatus(uid,task,IntentStatus.STARTED)
  
         try {
  
-          // TODO
+          val intent = params
+          intent match {
+            
+            case Intents.PURCHASE => {
+              
+              val source = new PurchaseSource(sc)
+              val dataset = source.get(req.data)
+              
+              buildModel(uid,task,dataset,source.scaleDef,source.stateDefs,intent)
+              
+            }
+            
+            case _ => { /* do nothing */}
+          }
           
         } catch {
           case e:Exception => RedisCache.addStatus(uid,task,IntentStatus.FAILURE)          
@@ -73,15 +92,28 @@ class MarkovActor extends Actor with SparkActor {
     }
     
   }
+   
+  private def buildModel(uid:String,task:String,dataset:RDD[Behavior],scaleDef:Int,stateDefs:Array[String],intent:String) {
+
+    RedisCache.addStatus(uid,task,IntentStatus.DATASET)
+
+    val model = new MarkovBuilder(scaleDef,stateDefs).build(dataset)
+    model.normalize
+    
+    /* Put model to cache */
+    RedisCache.addModel(uid,model.serialize)
+          
+    /* Update cache */
+    RedisCache.addStatus(uid,task,IntentStatus.FINISHED)
+    
+  }
   
-  private def properties(req:ServiceRequest):(Int,Double) = {
+  private def properties(req:ServiceRequest):String = {
       
     try {
       
-      val k = req.data("k").asInstanceOf[Int]
-      val minconf = req.data("minconf").asInstanceOf[Double]
-        
-      return (k,minconf)
+      val intent = req.data("intent")
+      return if (intents.contains(intent)) intent else null
         
     } catch {
       case e:Exception => {

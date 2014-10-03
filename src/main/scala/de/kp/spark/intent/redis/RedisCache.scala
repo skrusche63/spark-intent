@@ -40,6 +40,25 @@ object RedisCache {
     
   }
   
+  def addModel(uid:String,model:String) {
+   
+    val now = new Date()
+    val timestamp = now.getTime()
+    
+    val k = "model:" + service + ":" + uid
+    val v = "" + timestamp + ":" + model
+    
+    client.zadd(k,timestamp,v)
+    
+  }
+  
+  def modelExists(uid:String):Boolean = {
+
+    val k = "model:" + service + ":" + uid
+    client.exists(k)
+    
+  }
+  
   def taskExists(uid:String):Boolean = {
 
     val k = "job:" + service + ":" + uid
@@ -65,6 +84,23 @@ object RedisCache {
       
     }
      
+  }
+  
+  def model(uid:String):String = {
+
+    val k = "rule:" + service + ":" + uid
+    val models = client.zrange(k, 0, -1)
+
+    if (models.size() == 0) {
+      null
+    
+    } else {
+      
+      val last = models.toList.last
+      last.split(":")(1)
+      
+    }
+  
   }
   
   def status(uid:String):String = {

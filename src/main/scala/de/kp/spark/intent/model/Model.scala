@@ -36,6 +36,13 @@ case class ServiceResponse(
 case class JobDesc(
   service:String,task:String,status:String
 )
+/*
+ * This class specifies a list of user states that are used to represent
+ * the customers (purchase) behavior within a certain period of time 
+ */
+case class Behavior(site:String,user:String,states:List[String])
+
+case class Purchase(site:String,user:String,timestamp:Long,amount:Float)
 
 object Serializer {
     
@@ -58,6 +65,12 @@ object Algorithms {
   val MARKOV:String        = "MARKOV"
   val HIDDEN_MARKOV:String = "HIDDEN_MARKOV"
   
+}
+
+object Intents {
+  
+  val PURCHASE:String = "PURCHASE"
+    
 }
 
 object Sources {
@@ -88,7 +101,9 @@ object Messages {
 
   def TASK_IS_UNKNOWN(uid:String,task:String):String = String.format("""The task '%s' is unknown for uid '%s'.""", task, uid)
   
-  def MISSING_PARAMETERS(uid:String):String = String.format("""Paramaters are missing for uid '%s'.""", uid)
+  def MISSING_INTENT(uid:String):String = String.format("""Intent is missing for uid '%s'.""", uid)
+  
+  def MISSING_PARAMETERS(uid:String):String = String.format("""Parameters are missing for uid '%s'.""", uid)
 
   def SOURCE_IS_UNKNOWN(uid:String,source:String):String = String.format("""Source '%s' is unknown for uid '%s'.""", source, uid)
   
