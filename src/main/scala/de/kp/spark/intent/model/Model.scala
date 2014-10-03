@@ -43,6 +43,7 @@ case class JobDesc(
 case class Behavior(site:String,user:String,states:List[String])
 
 case class Purchase(site:String,user:String,timestamp:Long,amount:Float)
+case class Purchases(items:List[Purchase])
 
 object Serializer {
     
@@ -51,8 +52,10 @@ object Serializer {
    * Support for serialization and deserialization of job descriptions
    */
   def serializeJob(job:JobDesc):String = write(job)
-
   def deserializeJob(job:String):JobDesc = read[JobDesc](job)
+  
+  def serializePurchases(purchases:Purchases):String = write(purchases)
+  def deserializePurchases(purchases:String):Purchases = read[Purchases](purchases)
 
   def serializeResponse(response:ServiceResponse):String = write(response)
   
@@ -104,6 +107,10 @@ object Messages {
   def MISSING_INTENT(uid:String):String = String.format("""Intent is missing for uid '%s'.""", uid)
   
   def MISSING_PARAMETERS(uid:String):String = String.format("""Parameters are missing for uid '%s'.""", uid)
+  
+  def MISSING_PURCHASES(uid:String):String = String.format("""Purchase is missing for uid '%s'.""", uid)
+  
+  def MODEL_DOES_NOT_EXIST(uid:String):String = String.format("""Model does not exist for uid '%s'.""", uid)
 
   def SOURCE_IS_UNKNOWN(uid:String,source:String):String = String.format("""Source '%s' is unknown for uid '%s'.""", source, uid)
   

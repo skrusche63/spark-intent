@@ -128,7 +128,7 @@ class MarkovActor extends Actor with SparkActor {
     val uid = req.data("uid")
     
     if (missing == true) {
-      val data = Map("uid" -> uid, "message" -> Messages.MISSING_PARAMETERS(uid))
+      val data = Map("uid" -> uid, "message" -> Messages.MISSING_INTENT(uid))
       new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
   
     } else {

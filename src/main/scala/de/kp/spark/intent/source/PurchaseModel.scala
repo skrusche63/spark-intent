@@ -24,42 +24,12 @@ import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.markov.StateSpec
-import de.kp.spark.intent.spec.PurchaseSpec
+
+import de.kp.spark.intent.state.PurchaseState
 
 import scala.collection.mutable.ArrayBuffer
 
-class PurchaseModel() extends StateSpec with Serializable {
-  
-  private val spec = PurchaseSpec.get
-  
-  /*
-   * Time based settings
-   */
-  protected val SMALL_TIME_THRESHOLD  = spec("time.threshold.small").toInt
-  protected val MEDIUM_TIME_THRESHOLD = spec("time.threshold.medium").toInt
-  
-  protected val SMALL_TIME_HORIZON  = spec("time.horizon.small").toInt
-  protected val MEDIUM_TIME_HORIZON = spec("time.horizon.equal").toInt
-  protected val LARGE_TIME_HORIZON  = spec("time.horizon.large").toInt
-  
-  /*
-   * Amount based settings
-   */
-  protected val LESS_AMOUNT_THRESHOLD  = spec("amount.threshold.less").toDouble
-  protected val EQUAL_AMOUNT_THRESHOLD = spec("amount.threshold.equal").toDouble
-  
-  protected val LESS_AMOUNT_HORIZON  = spec("amount.horizon.less").toDouble
-  protected val EQUAL_AMOUNT_HORIZON = spec("amount.horizon.equal").toDouble
-  protected val LARGE_AMOUNT_HORIZON = spec("amount.horizon.large").toDouble
-        
-  private val DAY = 24 * 60 * 60 * 1000 // day in milliseconds
-  
-  val FD_SCALE = 1
-  val FD_STATE_DEFS = Array("SL", "SE", "SG", "ML", "ME", "MG", "LL", "LE", "LG")
-  
-  override def scaleDef = FD_SCALE
-  
-  override def stateDefs = FD_STATE_DEFS
+class PurchaseModel() extends PurchaseState with Serializable {
   
   /**
    * Represent transactions as a time ordered sequence of Markov States;
@@ -102,36 +72,5 @@ class PurchaseModel() extends StateSpec with Serializable {
       
     })
     
-  }
-  /**
-   * Amount spent compared to previous transaction
-   * 
-   * L : significantly less than
-   * E : more or less same
-   * G : significantly greater than
-   * 
-   */
-  private def stateByAmount(next:Float,previous:Float):String = {
-    
-    if (next < LESS_AMOUNT_THRESHOLD * previous) "L"
-     else if (next < EQUAL_AMOUNT_THRESHOLD * previous) "E"
-     else "G"
-    
-  }
-  /**   
-   * This method translates a period of time, i.e. the time 
-   * elapsed since last transaction into 3 discrete states:
-   * 
-   * S : small, M : medium, L : large
-   * 
-   */
-  private def stateByTime(next:Long,previous:Long):String = {
-    
-    val period = (next -previous) / DAY
-    
-    if (period < SMALL_TIME_THRESHOLD) "S"
-    else if (period < MEDIUM_TIME_THRESHOLD) "M"
-    else "L"
-  
   }
 }

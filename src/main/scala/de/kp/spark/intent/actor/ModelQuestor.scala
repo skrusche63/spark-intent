@@ -20,18 +20,81 @@ package de.kp.spark.intent.actor
 
 import akka.actor.{Actor,ActorLogging}
 
+import de.kp.spark.intent.PurchaseIntent
+
 import de.kp.spark.intent.model._
+import de.kp.spark.intent.redis.RedisCache
 
 class ModelQuestor extends Actor with ActorLogging {
 
   implicit val ec = context.dispatcher
   
   def receive = {
+    case req:ServiceRequest => {
+      
+      val origin = sender    
+      val uid = req.data("uid")
 
-    case _ => {}
-    
+      req.task match {
+
+        case "get" => {
+
+          val resp = if (RedisCache.modelExists(uid) == false) {           
+            failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
+            
+          } else {    
+               
+            req.data.get("intent") match {
+              
+              case None => failure(req,Messages.MISSING_INTENT(uid))
+              
+              case Some(intent) => {
+                
+                try {
+                  val prediction = predict(uid,intent,req.data)
+                
+                  val data = Map("uid" -> uid, "prediction" -> prediction)
+                  new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
+              
+                } catch {
+                  case e:Exception => failure(req,e.getMessage())
+
+                }
+                
+              }
+             
+            }
+          
+          }
+           
+          origin ! Serializer.serializeResponse(resp)
+          
+        }
+        
+        case _ => {
+          
+          val msg = Messages.TASK_IS_UNKNOWN(uid,req.task)
+          origin ! Serializer.serializeResponse(failure(req,msg))
+           
+        }
+        
+      }
+      
+    }    
   }
 
+  private def predict(uid:String,intent:String,data:Map[String,String]):String = {
+    
+    intent match {
+      
+      case Intents.PURCHASE => new PurchaseIntent().predict(uid,data)
+      
+      case _ => "{}"
+    
+    }
+    
+  }
+  
   private def failure(req:ServiceRequest,message:String):ServiceResponse = {
     
     val data = Map("uid" -> req.data("uid"), "message" -> message)
