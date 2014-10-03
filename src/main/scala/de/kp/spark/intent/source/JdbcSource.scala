@@ -31,7 +31,7 @@ class JdbcSource(@transient sc:SparkContext) extends Source(sc) {
    
   protected val (url,database,user,password) = Configuration.mysql
   
- override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):RDD[Behavior] = {
+ override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
     throw new Exception("Not implemented")
   }
   

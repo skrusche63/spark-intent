@@ -28,7 +28,7 @@ import de.kp.spark.intent.model._
 import de.kp.spark.intent.redis.RedisCache
 
 import de.kp.spark.intent.markov.MarkovBuilder
-import de.kp.spark.intent.source.PurchaseSource
+import de.kp.spark.intent.source.{PurchaseSource,Source}
 
 import scala.collection.JavaConversions._
 
@@ -57,21 +57,8 @@ class MarkovActor extends Actor with SparkActor {
         RedisCache.addStatus(uid,task,IntentStatus.STARTED)
  
         try {
- 
-          val intent = params
-          intent match {
-            
-            case Intents.PURCHASE => {
-              
-              val source = new PurchaseSource(sc)
-              val dataset = source.get(req.data)
-              
-              buildModel(uid,task,dataset,source.scaleDef,source.stateDefs,intent)
-              
-            }
-            
-            case _ => { /* do nothing */}
-          }
+
+          buildModel(uid,task,req.data,params)
           
         } catch {
           case e:Exception => RedisCache.addStatus(uid,task,IntentStatus.FAILURE)          
@@ -93,18 +80,34 @@ class MarkovActor extends Actor with SparkActor {
     
   }
    
-  private def buildModel(uid:String,task:String,dataset:RDD[Behavior],scaleDef:Int,stateDefs:Array[String],intent:String) {
+  private def buildModel(uid:String,task:String,data:Map[String,String],intent:String) {
+ 
+    intent match {
+            
+      case Intents.PURCHASE => {
+              
+        val source = new PurchaseSource(sc)
+        val dataset = source.get(data)
 
-    RedisCache.addStatus(uid,task,IntentStatus.DATASET)
+        RedisCache.addStatus(uid,task,IntentStatus.DATASET)
+        
+        val scale = source.scaleDef
+        val states = source.stateDefs
 
-    val model = new MarkovBuilder(scaleDef,stateDefs).build(dataset)
-    model.normalize
+        val model = MarkovBuilder.build(scale,states,dataset)
+        model.normalize
     
-    /* Put model to cache */
-    RedisCache.addModel(uid,model.serialize)
+        /* Put model to cache */
+        RedisCache.addModel(uid,model.serialize)
           
-    /* Update cache */
-    RedisCache.addStatus(uid,task,IntentStatus.FINISHED)
+        /* Update cache */
+        RedisCache.addStatus(uid,task,IntentStatus.FINISHED)
+
+      }
+      
+      case _ => { /* do nothing */}
+      
+    }
     
   }
   

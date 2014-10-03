@@ -46,12 +46,22 @@ class LoyaltyState extends StateSpec {
         
   protected val DAY = 24 * 60 * 60 * 1000 // day in milliseconds
   
-  protected val FD_SCALE = 1
-  protected val FD_STATE_DEFS = Array("SL", "SE", "SG", "ML", "ME", "MG", "LL", "LE", "LG")
+  protected val O_STATE_DEFS = Array("SL", "SE", "SG", "ML", "ME", "MG", "LL", "LE", "LG")
   
-  override def scaleDef = FD_SCALE
+  /*
+   * The hidden states with respect to loyalty recognition are defined as
+   * L (low), N (normal) and H (high)
+   */
+  protected val H_STATE_DEFS = Array("L","N","H")
   
-  override def stateDefs = FD_STATE_DEFS
+  override def scaleDef:Int = {
+    throw new Exception("Not implemented for Hidden Markov Models")
+  }
+  
+  override def stateDefs = O_STATE_DEFS
+  
+  override def hiddenDefs = H_STATE_DEFS
+  
   /**
    * Amount spent compared to previous transaction
    * 

@@ -27,6 +27,9 @@ import de.kp.spark.intent.{Configuration}
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.redis.RedisCache
 
+import de.kp.spark.intent.markov.HiddenMarkovTrainer
+import de.kp.spark.intent.source.LoyaltySource
+
 import scala.collection.JavaConversions._
 
 class HiddenMarkovActor extends Actor with SparkActor {
@@ -53,8 +56,8 @@ class HiddenMarkovActor extends Actor with SparkActor {
         RedisCache.addStatus(uid,task,IntentStatus.STARTED)
  
         try {
- 
-          // TODO
+
+            buildModel(uid,task,req.data,params)
           
         } catch {
           case e:Exception => RedisCache.addStatus(uid,task,IntentStatus.FAILURE)          
@@ -75,15 +78,51 @@ class HiddenMarkovActor extends Actor with SparkActor {
     }
     
   }
+   
+  private def buildModel(uid:String,task:String,data:Map[String,String],params:(String,Int,Double)) {
+ 
+    val (intent,iterations,epsilon) = params
+    intent match {
+            
+      case Intents.LOYALTY => {
+              
+        val source = new LoyaltySource(sc)
+        val dataset = source.get(data)
+
+        RedisCache.addStatus(uid,task,IntentStatus.DATASET)
+        
+        val states = source.stateDefs
+        val hidden = source.hiddenDefs
+
+        val model = HiddenMarkovTrainer.train(hidden,states,dataset,epsilon,iterations)
+    
+        /* Put model to cache */
+        //RedisCache.addModel(uid,model.serialize)
+          
+        /* Update cache */
+        RedisCache.addStatus(uid,task,IntentStatus.FINISHED)
+        
+      }
+      
+      case _ => { /* do nothing */}
+      
+    }
   
-  private def properties(req:ServiceRequest):(Int,Double) = {
+  }
+  
+  private def properties(req:ServiceRequest):(String,Int,Double) = {
       
     try {
       
-      val k = req.data("k").asInstanceOf[Int]
-      val minconf = req.data("minconf").asInstanceOf[Double]
-        
-      return (k,minconf)
+      val epsilon = req.data("epsilon").asInstanceOf[Double]
+      val iterations = req.data("iterations").asInstanceOf[Int]
+      
+      val intent = req.data("intent")
+      if (intents.contains(intent)) {
+        return (intent,iterations,epsilon)
+
+      } else 
+        return null
         
     } catch {
       case e:Exception => {

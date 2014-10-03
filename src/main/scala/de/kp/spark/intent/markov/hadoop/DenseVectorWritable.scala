@@ -1,4 +1,4 @@
-package de.kp.spark.intent.source
+package de.kp.spark.intent.markov.hadoop
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -18,38 +18,48 @@ package de.kp.spark.intent.source
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
+import java.io.{DataInput,DataOutput}
+import org.apache.hadoop.io.Writable
 
-import de.kp.spark.intent.model._
+import org.apache.mahout.math.DenseVector
 
-class LoyaltySource(@transient sc:SparkContext) {
+class DenseVectorWritable extends Writable {
 
-  private val model = new LoyaltyModel()
+  private var v:DenseVector = null
   
-  def get(data:Map[String,String]):Array[String] = {
+  def this(v:DenseVector) {
+    this()
+   
+    this.v = v
+    
+  }
+  
+  override def readFields(in:DataInput) {	
+    
+    val values = Array.fill[Double](in.readInt)(0.0) 
+    for (i <- 0 until values.length) {
+      values(i) = in.readDouble
+    }
 
-    val source = data("source")
-    source match {
+    this.v = new DenseVector(values)
+    
+  }
 
-      case Sources.ELASTIC => new ElasticSource(sc).loyalty(data)
+  override def write(out:DataOutput) {
 
-      case Sources.FILE => new FileSource(sc).loyalty(data)
-
-      case Sources.JDBC => new JdbcSource(sc).loyalty(data)
-
-      case Sources.PIWIK => new PiwikSource(sc).loyalty(data)
-            
-      case _ => null
+    /* size */
+    out.writeInt(v.size())
+    /* elements */
+    val iterator= v.iterator()
+    while (iterator.hasNext()) {
+      
+      val element = iterator.next()
+      out.writeDouble(element.get())
       
     }
     
   }
 
-  def scaleDef = model.scaleDef
-  
-  def stateDefs = model.stateDefs
-  
-  def hiddenDefs = model.hiddenDefs
+  def get():DenseVector = this.v
   
 }

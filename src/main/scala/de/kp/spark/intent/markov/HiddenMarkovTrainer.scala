@@ -1,4 +1,4 @@
-package de.kp.spark.intent
+package de.kp.spark.intent.markov
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -74,7 +74,7 @@ class HiddenMarkovTrainer(hiddenStates:Array[String],observableStates:Array[Stri
 
 }
 
-object HiddenMarkov {
+object HiddenMarkovTrainer {
   
   def train(hiddenStates:Array[String],observableStates:Array[String],observations:Array[String],epsilon:Double=0.0001, maxIterations:Int=1000):HiddenMarkovModel = {
     

@@ -52,6 +52,11 @@ class PurchaseState extends StateSpec {
   override def scaleDef = FD_SCALE
   
   override def stateDefs = FD_STATE_DEFS
+  
+  override def hiddenDefs:Array[String] = {
+    throw new Exception("Not implemented for Markov Models")
+  }
+  
   /**
    * Amount spent compared to previous transaction
    * 

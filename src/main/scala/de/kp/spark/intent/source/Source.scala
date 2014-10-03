@@ -25,7 +25,11 @@ import de.kp.spark.intent.model._
 
 abstract class Source(@transient sc:SparkContext) extends Serializable {
   
-  def loyalty(params:Map[String,Any] = Map.empty[String,Any]):RDD[Behavior]
+  /*
+   * Loyalty is predicted from observations, i.e. purchase transactions
+   * that have been transferred into states
+   */
+  def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String]
 
   def purchases(params:Map[String,Any]):RDD[Behavior]
 

@@ -76,3 +76,14 @@ class MarkovBuilder(scaleDef:Int,stateDefs:Array[String]) extends Serializable {
   }
   
 }
+
+object MarkovBuilder {
+  
+  def build(scaleDef:Int,stateDefs:Array[String],dataset:RDD[Behavior]):TransitionMatrix = {
+    
+    val builder = new MarkovBuilder(scaleDef,stateDefs)
+    builder.build(dataset)
+    
+  }
+
+}

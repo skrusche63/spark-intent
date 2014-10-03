@@ -29,7 +29,7 @@ import de.kp.spark.intent.model._
  */
 class PiwikSource(@transient sc:SparkContext) extends JdbcSource(sc) {
   
- override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):RDD[Behavior] = {
+ override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
     throw new Exception("Not implemented")
   }
   

@@ -20,8 +20,17 @@ package de.kp.spark.intent.markov
 
 abstract class StateSpec {
 
+  /**
+   * Retrieve scaling factor for scaled markov models
+   */
   def scaleDef(): Int
-  
+  /**
+   * Retrieve (observable) states
+   */
   def stateDefs(): Array[String]
+  /**
+   * Retrieve hidden states for midden markov model 
+   */
+  def hiddenDefs(): Array[String]
   
 }

@@ -20,13 +20,9 @@ package de.kp.spark.intent.source
 
 import org.apache.spark.rdd.RDD
 
-import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
 
-import de.kp.spark.intent.markov.StateSpec
-
 import de.kp.spark.intent.state.PurchaseState
-
 import scala.collection.mutable.ArrayBuffer
 
 class PurchaseModel() extends PurchaseState with Serializable {
