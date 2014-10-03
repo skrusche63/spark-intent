@@ -34,6 +34,8 @@ class HiddenMarkovActor extends Actor with SparkActor {
   /* Create Spark context */
   private val sc = createCtxLocal("HiddenMarkovActor",Configuration.spark)      
 
+  private def intents = Array(Intents.LOYALTY)
+
   def receive = {
     
     case req:ServiceRequest => {

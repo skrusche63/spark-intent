@@ -51,6 +51,7 @@ class ModelQuestor extends Actor with ActorLogging {
               case Some(intent) => {
                 
                 try {
+
                   val prediction = predict(uid,intent,req.data)
                 
                   val data = Map("uid" -> uid, "prediction" -> prediction)

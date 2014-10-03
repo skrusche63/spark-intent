@@ -19,11 +19,11 @@ package de.kp.spark.intent.state
 */
 
 import de.kp.spark.intent.markov.StateSpec
-import de.kp.spark.intent.spec.PurchaseSpec
+import de.kp.spark.intent.spec.LoyaltySpec
 
-class PurchaseState extends StateSpec {
+class LoyaltyState extends StateSpec {
   
-  private val spec = PurchaseSpec.get
+  private val spec = LoyaltySpec.get
   /*
    * Time based settings
    */
@@ -83,33 +83,5 @@ class PurchaseState extends StateSpec {
     else "L"
   
   }
-  
-  protected def nextAmount(nextstate:String,lastamount:Float):Float = {
-    
-    if (nextstate == "") return 0
-    
-    lastamount * (
-    
-        if (nextstate.endsWith("L")) LESS_AMOUNT_HORIZON.toFloat         
-        else if (nextstate.endsWith("E")) EQUAL_AMOUNT_HORIZON.toFloat    
-        else LARGE_AMOUNT_HORIZON.toFloat
-    
-    )
-    
-  }
 
-  protected def nextDate(nextstate:String,lastdate:Long):Long = {
-
-    if (nextstate == "") return -1
-    
-    lastdate + DAY * (
-    
-        if (nextstate.startsWith("S")) SMALL_TIME_HORIZON      
-        else if (nextstate.startsWith("M")) MEDIUM_TIME_HORIZON   
-        else LARGE_TIME_HORIZON
-        
-    )
-
-  }
-  
 }

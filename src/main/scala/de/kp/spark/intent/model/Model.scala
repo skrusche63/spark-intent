@@ -72,6 +72,7 @@ object Algorithms {
 
 object Intents {
   
+  val LOYALTY:String  = "LOYALTY"
   val PURCHASE:String = "PURCHASE"
     
 }
