@@ -21,16 +21,37 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
 
 class FileSource(@transient sc:SparkContext) extends Source(sc) {
+
+  val input = Configuration.file()
   
- override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
-    throw new Exception("Not implemented")
+ override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {    
+
+    val purchases = sc.textFile(input).map {line =>
+      
+      val Array(site,user,timestamp,amount) = line.split(',')
+      new Purchase(site,user,timestamp.toLong,amount.toFloat)
+
+    }
+    
+    new LoyaltyModel().observations(purchases)
+    
   }
   
   override def purchases(params:Map[String,Any]):RDD[Behavior] = {
-    throw new Exception("Not implemented")
+
+    val purchases = sc.textFile(input).map {line =>
+      
+      val Array(site,user,timestamp,amount) = line.split(',')
+      new Purchase(site,user,timestamp.toLong,amount.toFloat)
+
+    }
+   
+    new PurchaseModel().behaviors(purchases)
+
   }
   
 }

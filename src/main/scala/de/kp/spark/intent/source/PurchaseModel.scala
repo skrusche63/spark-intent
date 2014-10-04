@@ -31,7 +31,7 @@ class PurchaseModel() extends PurchaseState with Serializable {
    * Represent transactions as a time ordered sequence of Markov States;
    * the result is directly used to build the respective Markov Model
    */
-  def buildStates(sequences:RDD[Purchase]):RDD[Behavior] = {
+  def behaviors(sequences:RDD[Purchase]):RDD[Behavior] = {
     
     /*
      * Group purchases by site & user and restrict to those
