@@ -21,9 +21,9 @@ package de.kp.spark.intent.spec
 import scala.xml._
 import scala.collection.mutable.HashMap
 
-object PurchaseSpec {
+object LoyaltyModelSpec {
   
-  val path = "purchase.xml"
+  val path = "loyalty.xml"
   val root:Elem = XML.load(getClass.getClassLoader.getResource(path))  
 
   private val data = HashMap.empty[String,String]

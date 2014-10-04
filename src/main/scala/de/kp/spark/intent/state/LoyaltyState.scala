@@ -19,11 +19,11 @@ package de.kp.spark.intent.state
 */
 
 import de.kp.spark.intent.markov.StateSpec
-import de.kp.spark.intent.spec.LoyaltySpec
+import de.kp.spark.intent.spec.LoyaltyModelSpec
 
 class LoyaltyState extends StateSpec {
   
-  private val spec = LoyaltySpec.get
+  private val spec = LoyaltyModelSpec.get
   /*
    * Time based settings
    */

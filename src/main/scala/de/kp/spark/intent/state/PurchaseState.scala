@@ -19,11 +19,11 @@ package de.kp.spark.intent.state
 */
 
 import de.kp.spark.intent.markov.StateSpec
-import de.kp.spark.intent.spec.PurchaseSpec
+import de.kp.spark.intent.spec.PurchaseModelSpec
 
 class PurchaseState extends StateSpec {
   
-  private val spec = PurchaseSpec.get
+  private val spec = PurchaseModelSpec.get
   /*
    * Time based settings
    */

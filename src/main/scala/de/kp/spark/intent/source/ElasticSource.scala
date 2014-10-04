@@ -21,16 +21,67 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.intent.io.ElasticReader
+
 import de.kp.spark.intent.model._
+import de.kp.spark.intent.spec.{LoyaltyFieldSpec,PurchaseFieldSpec}
 
 class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
   
  override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
-    throw new Exception("Not implemented")
-  }
+    
+    val query = params("query").asInstanceOf[String]
+    val resource = params("resource").asInstanceOf[String]
+
+    val spec = sc.broadcast(PurchaseFieldSpec.get)
+
+    /* 
+     * Connect to Elasticsearch and extract the following fields from the
+     * respective search index: site, user, group and item
+     */
+    val rawset = new ElasticReader(sc,resource,query).read
+    val purchases = rawset.map(data => {
+      
+      val site = data(spec.value("site")._1)
+      val user = data(spec.value("user")._1)      
+
+      val timestamp = data(spec.value("timestamp")._1).toLong
+      val amount  = data(spec.value("amount")._1).toFloat
+      
+      new Purchase(site,user,timestamp,amount)
+      
+    })
+    
+    new LoyaltyModel().observations(purchases)
+ 
+ }
   
   override def purchases(params:Map[String,Any]):RDD[Behavior] = {
-    throw new Exception("Not implemented")
+    
+    val query = params("query").asInstanceOf[String]
+    val resource = params("resource").asInstanceOf[String]
+
+    val spec = sc.broadcast(PurchaseFieldSpec.get)
+
+    /* 
+     * Connect to Elasticsearch and extract the following fields from the
+     * respective search index: site, user, group and item
+     */
+    val rawset = new ElasticReader(sc,resource,query).read
+    val purchases = rawset.map(data => {
+      
+      val site = data(spec.value("site")._1)
+      val user = data(spec.value("user")._1)      
+
+      val timestamp = data(spec.value("timestamp")._1).toLong
+      val amount  = data(spec.value("amount")._1).toFloat
+      
+      new Purchase(site,user,timestamp,amount)
+      
+    })
+   
+    new PurchaseModel().behaviors(purchases)
+    
   }
 
 }
