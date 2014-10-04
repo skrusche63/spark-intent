@@ -88,7 +88,7 @@ object RedisCache {
   
   def model(uid:String):String = {
 
-    val k = "rule:" + service + ":" + uid
+    val k = "model:" + service + ":" + uid
     val models = client.zrange(k, 0, -1)
 
     if (models.size() == 0) {
