@@ -41,6 +41,7 @@ case class JobDesc(
  * the customers (purchase) behavior within a certain period of time 
  */
 case class Behavior(site:String,user:String,states:List[String])
+case class Behaviors(items:List[Behavior])
 
 case class Purchase(site:String,user:String,timestamp:Long,amount:Float)
 case class Purchases(items:List[Purchase])
@@ -48,6 +49,9 @@ case class Purchases(items:List[Purchase])
 object Serializer {
     
   implicit val formats = Serialization.formats(NoTypeHints)
+
+  def serializeBehaviors(behaviors:Behaviors):String = write(behaviors)
+  def deserializeBehavior(behaviors:String):Behaviors = read[Behaviors](behaviors)
   /*
    * Support for serialization and deserialization of job descriptions
    */

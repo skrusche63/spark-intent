@@ -57,6 +57,13 @@ object Configuration {
     cfg.getString("path")   
     
   }
+   
+  def markov():String = {
+  
+    val cfg = config.getConfig("markov")
+    cfg.getString("base")   
+    
+  }
  
   def mysql():(String,String,String,String) = {
 

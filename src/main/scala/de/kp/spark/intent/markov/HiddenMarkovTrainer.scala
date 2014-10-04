@@ -19,9 +19,24 @@ package de.kp.spark.intent.markov
 */
 
 import de.kp.scala.hmm.{HmmPredictor,HmmModel,HmmTrainer}
-import scala.Array.canBuildFrom
+import de.kp.spark.intent.markov.hadoop.HadoopIO
 
-class HiddenMarkovModel(model:HmmModel,hStates:Map[Int,String],oStates:Map[String,Int]) {
+class HiddenMarkovModel {
+
+  private var hStates:Map[Int,String] = null
+  private var oStates:Map[String,Int] = null
+  
+  private var model:HmmModel = null
+  
+  def this(model:HmmModel,hStates:Map[Int,String],oStates:Map[String,Int]) {
+     this() 
+  
+     this.hStates = hStates
+     this.oStates = oStates
+  
+     this.model = model
+     
+  }
   
   def predict(observations:Array[String]):Array[String] = {
 
@@ -41,6 +56,14 @@ class HiddenMarkovModel(model:HmmModel,hStates:Map[Int,String],oStates:Map[Strin
     /* Transform Integer representation of hidden states into String representation */
     hiddenStates.map(h => hStates(h))
     
+  }
+
+  def save(path:String) {
+    HadoopIO.writeHMM(hStates,oStates,model,path)
+  }
+  
+  def load(path:String) {
+    val (hStates,oStates,model) = HadoopIO.readHMM(path)
   }
   
 }

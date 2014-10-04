@@ -18,10 +18,74 @@ package de.kp.spark.intent
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-class LoyaltyIntent {
+import de.kp.spark.intent.model._
+import de.kp.spark.intent.redis.RedisCache
+
+import de.kp.spark.intent.markov.HiddenMarkovModel
+import de.kp.spark.intent.state.LoyaltyState
+
+import scala.collection.mutable.ArrayBuffer
+
+class LoyaltyIntent extends LoyaltyState {
   
   def predict(uid:String,data:Map[String,String]):String = {
-    throw new Exception("not implemented")
+    
+    val model = new HiddenMarkovModel()
+
+    val path = RedisCache.model(uid)    
+    model.load(path)
+    
+    data.get("purchases") match {
+      
+      case None => throw new Exception(Messages.MISSING_PURCHASES(uid))
+      
+      case Some(value) => {
+        
+        val purchases = Serializer.deserializePurchases(value).items
+        /*
+         * Group purchases by site & user and restrict to those
+         * users with more than one purchase
+         */
+        val behaviors = purchases.groupBy(p => (p.site,p.user)).filter(_._2.size > 1).map(p => {
+
+          val (site,user) = p._1
+          val orders      = p._2.map(v => (v.timestamp,v.amount)).toList.sortBy(_._1)
+      
+          /* Extract first order */
+          var (pre_time,pre_amount) = orders.head
+          
+          val states = ArrayBuffer.empty[String]
+          for ((time,amount) <- orders.tail) {
+        
+            /* Determine state from amount */
+            val astate = stateByAmount(amount,pre_amount)
+     
+            /* Determine state from time elapsed between
+             * subsequent orders or transactions
+             */
+            val tstate = stateByTime(time,pre_time)
+      
+            val state = astate + tstate
+            states += state
+        
+            pre_amount = amount
+            pre_time   = time
+        
+          }
+      
+          val observations = states.toArray
+          val intents = model.predict(observations)
+          
+          new Behavior(site,user,intents.toList)
+          
+        }).toList
+              
+        Serializer.serializeBehaviors(new Behaviors(behaviors))
+
+      }
+    
+    }
+  
   }
 
 }

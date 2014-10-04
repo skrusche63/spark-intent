@@ -20,7 +20,7 @@ package de.kp.spark.intent.actor
 
 import akka.actor.{Actor,ActorLogging}
 
-import de.kp.spark.intent.PurchaseIntent
+import de.kp.spark.intent.{LoyaltyIntent,PurchaseIntent}
 
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.redis.RedisCache
@@ -30,6 +30,7 @@ class ModelQuestor extends Actor with ActorLogging {
   implicit val ec = context.dispatcher
   
   def receive = {
+    
     case req:ServiceRequest => {
       
       val origin = sender    
@@ -87,6 +88,8 @@ class ModelQuestor extends Actor with ActorLogging {
   private def predict(uid:String,intent:String,data:Map[String,String]):String = {
     
     intent match {
+      
+      case Intents.LOYALTY => new LoyaltyIntent().predict(uid,data)
       
       case Intents.PURCHASE => new PurchaseIntent().predict(uid,data)
       

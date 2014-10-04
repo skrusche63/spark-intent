@@ -18,6 +18,7 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.util.Date
 import akka.actor.Actor
 
 import org.apache.spark.rdd.RDD
@@ -37,6 +38,8 @@ class HiddenMarkovActor extends Actor with SparkActor {
   /* Create Spark context */
   private val sc = createCtxLocal("HiddenMarkovActor",Configuration.spark)      
 
+  private val base = Configuration.markov
+  
   private def intents = Array(Intents.LOYALTY)
 
   def receive = {
@@ -95,9 +98,15 @@ class HiddenMarkovActor extends Actor with SparkActor {
         val hidden = source.hiddenDefs
 
         val model = HiddenMarkovTrainer.train(hidden,states,dataset,epsilon,iterations)
+
+        val now = new Date()
+        val dir = base + "/hmm-" + now.getTime().toString
+    
+        /* Save model in directory of file system */
+        model.save(dir)
     
         /* Put model to cache */
-        //RedisCache.addModel(uid,model.serialize)
+        RedisCache.addModel(uid,dir)
           
         /* Update cache */
         RedisCache.addStatus(uid,task,IntentStatus.FINISHED)

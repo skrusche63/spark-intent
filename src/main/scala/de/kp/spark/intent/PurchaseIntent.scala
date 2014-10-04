@@ -18,8 +18,6 @@ package de.kp.spark.intent
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import org.apache.spark.rdd.RDD
-
 import de.kp.spark.intent.markov.TransitionMatrix
 
 import de.kp.spark.intent.model._
