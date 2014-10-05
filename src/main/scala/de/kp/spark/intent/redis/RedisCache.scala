@@ -28,6 +28,18 @@ object RedisCache {
   val client  = RedisClient()
   val service = "intent"
   
+  def addModel(uid:String,model:String) {
+   
+    val now = new Date()
+    val timestamp = now.getTime()
+    
+    val k = "model:" + service + ":" + uid
+    val v = "" + timestamp + ":" + model
+    
+    client.zadd(k,timestamp,v)
+    
+  }
+  
   def addStatus(uid:String, task:String, status:String) {
    
     val now = new Date()
@@ -40,15 +52,10 @@ object RedisCache {
     
   }
   
-  def addModel(uid:String,model:String) {
-   
-    val now = new Date()
-    val timestamp = now.getTime()
-    
-    val k = "model:" + service + ":" + uid
-    val v = "" + timestamp + ":" + model
-    
-    client.zadd(k,timestamp,v)
+  def metaExists(uid:String):Boolean = {
+
+    val k = "meta:" + uid
+    client.exists(k)
     
   }
   
@@ -66,24 +73,20 @@ object RedisCache {
     
   }
   
-  /**
-   * Get timestamp when job with 'uid' started
-   */
-  def starttime(uid:String):Long = {
-    
-    val k = "job:" + service + ":" + uid
-    val jobs = client.zrange(k, 0, -1)
+  def meta(uid:String):String = {
 
-    if (jobs.size() == 0) {
-      0
+    val k = "meta:" + uid
+    val metas = client.zrange(k, 0, -1)
+
+    if (metas.size() == 0) {
+      null
     
     } else {
       
-      val first = jobs.iterator().next()
-      first.split(":")(0).toLong
+      metas.toList.last
       
     }
-     
+
   }
   
   def model(uid:String):String = {
@@ -101,6 +104,23 @@ object RedisCache {
       
     }
   
+  }
+  
+  def starttime(uid:String):Long = {
+    
+    val k = "job:" + service + ":" + uid
+    val jobs = client.zrange(k, 0, -1)
+
+    if (jobs.size() == 0) {
+      0
+    
+    } else {
+      
+      val first = jobs.iterator().next()
+      first.split(":")(0).toLong
+      
+    }
+     
   }
   
   def status(uid:String):String = {

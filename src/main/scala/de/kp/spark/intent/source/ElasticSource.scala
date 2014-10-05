@@ -24,7 +24,7 @@ import org.apache.spark.rdd.RDD
 import de.kp.spark.intent.io.ElasticReader
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.spec.{LoyaltyFieldSpec,PurchaseFieldSpec}
+import de.kp.spark.intent.spec.Fields
 
 class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
   
@@ -33,7 +33,8 @@ class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
     val query = params("query").asInstanceOf[String]
     val resource = params("resource").asInstanceOf[String]
 
-    val spec = sc.broadcast(PurchaseFieldSpec.get)
+    val uid = params("uid").asInstanceOf[String]    
+    val spec = sc.broadcast(Fields.get(uid,Intents.LOYALTY))
 
     /* 
      * Connect to Elasticsearch and extract the following fields from the
@@ -61,7 +62,8 @@ class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
     val query = params("query").asInstanceOf[String]
     val resource = params("resource").asInstanceOf[String]
 
-    val spec = sc.broadcast(PurchaseFieldSpec.get)
+    val uid = params("uid").asInstanceOf[String]    
+    val spec = sc.broadcast(Fields.get(uid,Intents.PURCHASE))
 
     /* 
      * Connect to Elasticsearch and extract the following fields from the

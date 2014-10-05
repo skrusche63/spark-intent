@@ -25,7 +25,7 @@ import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.io.JdbcReader
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.spec.{LoyaltyFieldSpec,PurchaseFieldSpec}
+import de.kp.spark.intent.spec.Fields
 
 class JdbcSource(@transient sc:SparkContext) extends Source(sc) {
 
@@ -35,9 +35,12 @@ class JdbcSource(@transient sc:SparkContext) extends Source(sc) {
   protected val (url,database,user,password) = Configuration.mysql
   
  override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
-  
-    val fieldspec = LoyaltyFieldSpec.get
+    
+    val uid = params("uid").asInstanceOf[String]    
+    
+    val fieldspec = Fields.get(uid,Intents.LOYALTY)
     val fields = fieldspec.map(kv => kv._2._1).toList
+
     /*
      * Convert field specification into broadcast variable
      */
@@ -65,9 +68,12 @@ class JdbcSource(@transient sc:SparkContext) extends Source(sc) {
   }
   
   override def purchases(params:Map[String,Any]):RDD[Behavior] = {
-  
-    val fieldspec = PurchaseFieldSpec.get
+    
+    val uid = params("uid").asInstanceOf[String]    
+    
+    val fieldspec = Fields.get(uid,Intents.PURCHASE)
     val fields = fieldspec.map(kv => kv._2._1).toList
+  
     /*
      * Convert field specification into broadcast variable
      */
