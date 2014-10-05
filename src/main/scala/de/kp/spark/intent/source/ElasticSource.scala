@@ -37,8 +37,10 @@ class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
     val spec = sc.broadcast(Fields.get(uid,Intents.LOYALTY))
 
     /* 
-     * Connect to Elasticsearch and extract the following fields from the
-     * respective search index: site, user, group and item
+     * Connect to Elasticsearch and extract the following fields from 
+     * the respective search index: site, user, timestamp and amount; 
+     * note, that the hidden loyalty states are actually derived from 
+     * the purchase events of the customer only
      */
     val rawset = new ElasticReader(sc,resource,query).read
     val purchases = rawset.map(data => {
@@ -66,8 +68,8 @@ class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
     val spec = sc.broadcast(Fields.get(uid,Intents.PURCHASE))
 
     /* 
-     * Connect to Elasticsearch and extract the following fields from the
-     * respective search index: site, user, group and item
+     * Connect to Elasticsearch and extract the following fields from 
+     * the respective search index: site, user, timestamp and amount
      */
     val rawset = new ElasticReader(sc,resource,query).read
     val purchases = rawset.map(data => {
