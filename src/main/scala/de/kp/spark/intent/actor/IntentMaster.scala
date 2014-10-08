@@ -24,7 +24,6 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 import akka.actor.{OneForOneStrategy, SupervisorStrategy}
-import akka.routing.RoundRobinRouter
 
 import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
@@ -37,39 +36,29 @@ class IntentMaster extends Actor with ActorLogging with SparkActor {
   /* Create Spark context */
   private val sc = createCtxLocal("IntentContext",Configuration.spark)      
   
-  /* Load configuration for routers */
-  val (time,retries,workers) = Configuration.router   
+  val (duration,retries,time) = Configuration.actor   
 
-  override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries=retries,withinTimeRange = DurationInt(time).minutes) {
+  override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries=retries,withinTimeRange = DurationInt(duration).minutes) {
     case _ : Exception => SupervisorStrategy.Restart
   }
-
-  /*
-   * The builder depends on Spark while the questor is independent
-   * of Spark and exclusively reads data from a Redis instance
-   */
-  val builder = context.actorOf(Props(new ModelBuilder(sc)))
-  val questor = context.actorOf(Props(new ModelQuestor()).withRouter(RoundRobinRouter(workers)))
   
   def receive = {
     
     case req:String => {
       
       implicit val ec = context.dispatcher
-
-      val duration = Configuration.actor      
-      implicit val timeout:Timeout = DurationInt(duration).second
+      implicit val timeout:Timeout = DurationInt(time).second
 	  	    
 	  val origin = sender
 
 	  val deser = Serializer.deserializeRequest(req)
 	  val response = deser.task.split(":")(0) match {
 
-	    case "get" => ask(questor,deser).mapTo[ServiceResponse]
+	    case "get" => ask(actor("questor"),deser).mapTo[ServiceResponse]
 
-	    case "train"  => ask(builder,deser).mapTo[ServiceResponse]
+	    case "train"  => ask(actor("builder"),deser).mapTo[ServiceResponse]
 
-	    case "status" => ask(builder,deser).mapTo[ServiceResponse]
+	    case "status" => ask(actor("builder"),deser).mapTo[ServiceResponse]
        
         case _ => {
 
@@ -89,15 +78,40 @@ class IntentMaster extends Actor with ActorLogging with SparkActor {
       
     }
   
-    case _ => {}
+    case _ => {
+
+      val origin = sender               
+      val msg = Messages.REQUEST_IS_UNKNOWN()          
+          
+      origin ! Serializer.serializeResponse(failure(null,msg))
+    }
     
   }
 
+  private def actor(worker:String):ActorRef = {
+    
+    worker match {
+  
+      case "builder" => context.actorOf(Props(new ModelBuilder(sc)))
+        
+      case "questor" => context.actorOf(Props(new ModelQuestor()))
+      
+      case _ => null
+      
+    }
+  
+  }
   private def failure(req:ServiceRequest,message:String):ServiceResponse = {
     
-    val data = Map("uid" -> req.data("uid"), "message" -> message)
-    new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
+    if (req == null) {
+      val data = Map("message" -> message)
+      new ServiceResponse("","",data,IntentStatus.FAILURE)	
+      
+    } else {
+      val data = Map("uid" -> req.data("uid"), "message" -> message)
+      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
     
+    }
   }
 
 }

@@ -70,19 +70,34 @@ class ModelQuestor extends Actor with ActorLogging {
           }
            
           origin ! Serializer.serializeResponse(resp)
+          context.stop(self)
           
         }
-        
+    
         case _ => {
+      
+          val origin = sender               
+          val msg = Messages.REQUEST_IS_UNKNOWN()          
           
-          val msg = Messages.TASK_IS_UNKNOWN(uid,req.task)
-          origin ! Serializer.serializeResponse(failure(req,msg))
-           
+          origin ! Serializer.serializeResponse(failure(null,msg))
+          context.stop(self)
+
         }
         
       }
       
     }    
+    
+    case _ => {
+      
+      val origin = sender               
+      val msg = Messages.REQUEST_IS_UNKNOWN()          
+          
+      origin ! Serializer.serializeResponse(failure(null,msg))
+      context.stop(self)
+
+    }
+    
   }
 
   private def predict(uid:String,intent:String,data:Map[String,String]):String = {
@@ -101,8 +116,15 @@ class ModelQuestor extends Actor with ActorLogging {
   
   private def failure(req:ServiceRequest,message:String):ServiceResponse = {
     
-    val data = Map("uid" -> req.data("uid"), "message" -> message)
-    new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
+    if (req == null) {
+      val data = Map("message" -> message)
+      new ServiceResponse("","",data,IntentStatus.FAILURE)	
+      
+    } else {
+      val data = Map("uid" -> req.data("uid"), "message" -> message)
+      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
+    
+    }
     
   }
   
