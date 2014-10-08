@@ -84,6 +84,7 @@ class IntentMaster extends Actor with ActorLogging with SparkActor {
       val msg = Messages.REQUEST_IS_UNKNOWN()          
           
       origin ! Serializer.serializeResponse(failure(null,msg))
+
     }
     
   }
@@ -101,6 +102,7 @@ class IntentMaster extends Actor with ActorLogging with SparkActor {
     }
   
   }
+  
   private def failure(req:ServiceRequest,message:String):ServiceResponse = {
     
     if (req == null) {
