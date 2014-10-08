@@ -64,16 +64,14 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with Actor
 
       }
       
-      sc.stop
       context.stop(self)
           
     }
     
     case _ => {
-      
-      sc.stop
-      context.stop(self)
-      
+      log.error("Unknow request.")
+      context.stop(self)     
+
     }
     
   }

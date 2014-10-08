@@ -67,14 +67,12 @@ class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLoggin
 
       }
       
-      sc.stop
       context.stop(self)
           
     }
     
     case _ => {
-      
-      sc.stop
+      log.error("Unknown request.")
       context.stop(self)
       
     }
