@@ -32,7 +32,10 @@ import de.kp.spark.intent.model._
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
 
-class IntentMaster extends Actor with ActorLogging {
+class IntentMaster extends Actor with ActorLogging with SparkActor {
+  
+  /* Create Spark context */
+  private val sc = createCtxLocal("IntentContext",Configuration.spark)      
   
   /* Load configuration for routers */
   val (time,retries,workers) = Configuration.router   
@@ -41,8 +44,12 @@ class IntentMaster extends Actor with ActorLogging {
     case _ : Exception => SupervisorStrategy.Restart
   }
 
-  val builder = context.actorOf(Props[ModelBuilder])
-  val questor = context.actorOf(Props[ModelQuestor].withRouter(RoundRobinRouter(workers)))
+  /*
+   * The builder depends on Spark while the questor is independent
+   * of Spark and exclusively reads data from a Redis instance
+   */
+  val builder = context.actorOf(Props(new ModelBuilder(sc)))
+  val questor = context.actorOf(Props(new ModelQuestor()).withRouter(RoundRobinRouter(workers)))
   
   def receive = {
     

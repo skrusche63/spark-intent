@@ -28,13 +28,10 @@ import de.kp.spark.intent.model._
 import de.kp.spark.intent.spec.Fields
 
 class JdbcSource(@transient sc:SparkContext) extends Source(sc) {
-
-  protected val MYSQL_DRIVER   = "com.mysql.jdbc.Driver"
-  protected val NUM_PARTITIONS = 1
    
   protected val (url,database,user,password) = Configuration.mysql
   
- override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
+  override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
     
     val uid = params("uid").asInstanceOf[String]    
     

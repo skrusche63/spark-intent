@@ -18,9 +18,9 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import akka.actor.Actor
+import org.apache.spark.SparkContext
 
-import org.apache.spark.rdd.RDD
+import akka.actor.{Actor,ActorLogging}
 
 import de.kp.spark.intent.{Configuration}
 
@@ -31,11 +31,12 @@ import de.kp.spark.intent.markov.MarkovBuilder
 import de.kp.spark.intent.source.{PurchaseSource,Source}
 
 import scala.collection.JavaConversions._
-
-class MarkovActor extends Actor with SparkActor {
-  
-  /* Create Spark context */
-  private val sc = createCtxLocal("MarkovActor",Configuration.spark)      
+/*
+ * The SparkContext is used to read data from different data source
+ * and provide them as RDDs; building the markov model is independent
+ * of Spark 
+ */
+class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLogging {
 
   private def intents = Array(Intents.PURCHASE)
   

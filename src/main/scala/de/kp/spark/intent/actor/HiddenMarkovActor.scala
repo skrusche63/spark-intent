@@ -18,10 +18,10 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import java.util.Date
-import akka.actor.Actor
+import org.apache.spark.SparkContext
 
-import org.apache.spark.rdd.RDD
+import java.util.Date
+import akka.actor.{Actor,ActorLogging}
 
 import de.kp.spark.intent.{Configuration}
 
@@ -33,14 +33,10 @@ import de.kp.spark.intent.source.LoyaltySource
 
 import scala.collection.JavaConversions._
 
-class HiddenMarkovActor extends Actor with SparkActor {
-  
-  /* Create Spark context */
-  private val sc = createCtxLocal("HiddenMarkovActor",Configuration.spark)      
+class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with ActorLogging {
 
-  private val base = Configuration.markov
-  
-  private def intents = Array(Intents.LOYALTY)
+  private val base = Configuration.markov  
+  private val intents = Array(Intents.LOYALTY)
 
   def receive = {
     

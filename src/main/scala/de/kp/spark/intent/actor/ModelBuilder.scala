@@ -17,6 +17,9 @@ package de.kp.spark.intent.actor
  * 
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
+import org.apache.spark.SparkContext
+
 import akka.actor.{Actor,ActorLogging,ActorRef,Props}
 
 import akka.pattern.ask
@@ -30,7 +33,7 @@ import de.kp.spark.intent.redis.RedisCache
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class ModelBuilder extends Actor with ActorLogging {
+class ModelBuilder(@transient val sc:SparkContext) extends Actor with ActorLogging {
 
   implicit val ec = context.dispatcher
   
@@ -160,10 +163,10 @@ class ModelBuilder extends Actor with ActorLogging {
 
     val algorithm = req.data("algorithm")
     if (algorithm == Algorithms.HIDDEN_MARKOV) {  
-      context.actorOf(Props(new HiddenMarkovActor()))      
+      context.actorOf(Props(new HiddenMarkovActor(sc)))      
       
     } else {
-      context.actorOf(Props(new MarkovActor()))      
+      context.actorOf(Props(new MarkovActor(sc)))      
     
     }
     
