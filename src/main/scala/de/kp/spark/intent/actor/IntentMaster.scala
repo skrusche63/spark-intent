@@ -18,6 +18,7 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+import org.apache.spark.SparkContext
 import akka.actor.{Actor,ActorLogging,ActorRef,Props}
 
 import akka.pattern.ask
@@ -31,10 +32,7 @@ import de.kp.spark.intent.model._
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
 
-class IntentMaster extends Actor with ActorLogging with SparkActor {
-  
-  /* Create Spark context */
-  private val sc = createCtxLocal("IntentContext",Configuration.spark)      
+class IntentMaster(@transient val sc:SparkContext) extends Actor with ActorLogging {
   
   val (duration,retries,time) = Configuration.actor   
 

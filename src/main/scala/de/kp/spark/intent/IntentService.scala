@@ -39,10 +39,13 @@ object IntentService {
 
 }
 
-class IntentService(conf:String, name:String) {
+class IntentService(conf:String, name:String) extends SparkService {
 
   val system = ActorSystem(name, ConfigFactory.load(conf))
   sys.addShutdownHook(system.shutdown)
+  
+  /* Create Spark context */
+  private val sc = createCtxLocal("IntentContext",Configuration.spark)      
 
   val master = system.actorOf(Props[IntentMaster], name="intent-master")
 
