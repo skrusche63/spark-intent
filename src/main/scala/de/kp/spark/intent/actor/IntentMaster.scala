@@ -57,6 +57,8 @@ class IntentMaster(@transient val sc:SparkContext) extends Actor with ActorLoggi
 	    case "train"  => ask(actor("builder"),deser).mapTo[ServiceResponse]
 
 	    case "status" => ask(actor("builder"),deser).mapTo[ServiceResponse]
+
+	    case "track" => ask(actor("tracker"),deser).mapTo[ServiceResponse]
        
         case _ => {
 
@@ -94,6 +96,8 @@ class IntentMaster(@transient val sc:SparkContext) extends Actor with ActorLoggi
       case "builder" => context.actorOf(Props(new ModelBuilder(sc)))
         
       case "questor" => context.actorOf(Props(new ModelQuestor()))
+        
+      case "tracker" => context.actorOf(Props(new IntentTracker()))
       
       case _ => null
       

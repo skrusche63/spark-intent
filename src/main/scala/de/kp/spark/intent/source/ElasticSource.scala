@@ -29,9 +29,15 @@ import de.kp.spark.intent.spec.Fields
 class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
   
  override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
+    /*
+     * Elasticsearch is used as a data source as well as a data sink;
+     * this implies that the respective indexes and mappings have to
+     * be distinguished
+     */
+    val index = params("source.index").asInstanceOf[String]
+    val mapping = params("source.type").asInstanceOf[String]
     
     val query = params("query").asInstanceOf[String]
-    val resource = params("resource").asInstanceOf[String]
 
     val uid = params("uid").asInstanceOf[String]    
     val spec = sc.broadcast(Fields.get(uid,Intents.LOYALTY))
@@ -42,7 +48,7 @@ class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
      * note, that the hidden loyalty states are actually derived from 
      * the purchase events of the customer only
      */
-    val rawset = new ElasticReader(sc,resource,query).read
+    val rawset = new ElasticReader(sc,index,mapping,query).read
     val purchases = rawset.map(data => {
       
       val site = data(spec.value("site")._1)
@@ -60,9 +66,15 @@ class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
  }
   
   override def purchases(params:Map[String,Any]):RDD[Behavior] = {
+    /*
+     * Elasticsearch is used as a data source as well as a data sink;
+     * this implies that the respective indexes and mappings have to
+     * be distinguished
+     */
+    val index = params("source.index").asInstanceOf[String]
+    val mapping = params("source.type").asInstanceOf[String]
     
     val query = params("query").asInstanceOf[String]
-    val resource = params("resource").asInstanceOf[String]
 
     val uid = params("uid").asInstanceOf[String]    
     val spec = sc.broadcast(Fields.get(uid,Intents.PURCHASE))
@@ -71,7 +83,7 @@ class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
      * Connect to Elasticsearch and extract the following fields from 
      * the respective search index: site, user, timestamp and amount
      */
-    val rawset = new ElasticReader(sc,resource,query).read
+    val rawset = new ElasticReader(sc,index,mapping,query).read
     val purchases = rawset.map(data => {
       
       val site = data(spec.value("site")._1)
