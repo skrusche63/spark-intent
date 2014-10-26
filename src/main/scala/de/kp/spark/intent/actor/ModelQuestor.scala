@@ -38,7 +38,7 @@ class ModelQuestor extends Actor with ActorLogging {
 
       req.task match {
 
-        case "get" => {
+        case "get:prediction" => {
 
           val resp = if (RedisCache.modelExists(uid) == false) {           
             failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
