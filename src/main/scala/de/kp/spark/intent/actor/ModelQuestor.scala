@@ -38,34 +38,17 @@ class ModelQuestor extends Actor with ActorLogging {
 
       req.task match {
 
-        case "get:prediction" => {
+        case "get:loyalty" => {
 
           val resp = if (RedisCache.modelExists(uid) == false) {           
             failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
             
           } else {    
-               
-            req.data.get("intent") match {
-              
-              case None => failure(req,Messages.MISSING_INTENT(uid))
-              
-              case Some(intent) => {
-                
-                try {
 
-                  val prediction = predict(uid,intent,req.data)
+             val prediction = new LoyaltyIntent().predict(uid,req.data)
                 
-                  val data = Map("uid" -> uid, "prediction" -> prediction)
-                  new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
-              
-                } catch {
-                  case e:Exception => failure(req,e.getMessage())
-
-                }
-                
-              }
-             
-            }
+             val data = Map("uid" -> uid, "loyalty" -> prediction)
+             new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
           
           }
            
@@ -74,6 +57,22 @@ class ModelQuestor extends Actor with ActorLogging {
           
         }
     
+        case "get:purchase" => {
+
+          val resp = if (RedisCache.modelExists(uid) == false) {           
+            failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
+            
+          } else {   
+            
+            val prediction = new PurchaseIntent().predict(uid,req.data)
+
+            val data = Map("uid" -> uid, "purchase" -> prediction)
+            new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
+          
+          }
+          
+        }
+        
         case _ => {
       
           val origin = sender               
@@ -96,20 +95,6 @@ class ModelQuestor extends Actor with ActorLogging {
       origin ! Serializer.serializeResponse(failure(null,msg))
       context.stop(self)
 
-    }
-    
-  }
-
-  private def predict(uid:String,intent:String,data:Map[String,String]):String = {
-    
-    intent match {
-      
-      case Intents.LOYALTY => new LoyaltyIntent().predict(uid,data)
-      
-      case Intents.PURCHASE => new PurchaseIntent().predict(uid,data)
-      
-      case _ => "{}"
-    
     }
     
   }
