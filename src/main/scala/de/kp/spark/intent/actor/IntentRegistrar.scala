@@ -51,7 +51,7 @@ class IntentRegistrar extends BaseActor {
             
             RedisCache.addFields(req, new Fields(fields.toList))
         
-            new ServiceResponse("cluster","register",Map("uid"-> uid),IntentStatus.SUCCESS)
+            new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
         
           } catch {
             case throwable:Throwable => failure(req,throwable.getMessage)
@@ -76,7 +76,7 @@ class IntentRegistrar extends BaseActor {
             
             RedisCache.addFields(req, new Fields(fields.toList))
         
-            new ServiceResponse("cluster","register",Map("uid"-> uid),IntentStatus.SUCCESS)
+            new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
         
           } catch {
             case throwable:Throwable => failure(req,throwable.getMessage)
