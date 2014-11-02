@@ -18,8 +18,6 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import akka.actor.{Actor,ActorLogging}
-
 import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.io.ElasticWriter
@@ -28,7 +26,7 @@ import de.kp.spark.intent.io.{ElasticBuilderFactory => EBF}
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 
-class IntentTracker extends Actor with ActorLogging {
+class IntentTracker extends BaseActor {
   
   def receive = {
     
@@ -127,20 +125,6 @@ class IntentTracker extends Actor with ActorLogging {
 
     }
     
-  }
-
-  private def failure(req:ServiceRequest,message:String):ServiceResponse = {
-    
-    if (req == null) {
-      val data = Map("message" -> message)
-      new ServiceResponse("","",data,IntentStatus.FAILURE)	
-      
-    } else {
-      val data = Map("uid" -> req.data("uid"), "message" -> message)
-      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
-    
-    }
-
   }
  
 }

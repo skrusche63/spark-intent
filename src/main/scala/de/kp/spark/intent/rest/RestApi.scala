@@ -73,10 +73,17 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
 	    }
 	  }
     }  ~ 
-    path("get") { 
+    path("get" / Segment) {subject =>  
 	  post {
 	    respondWithStatus(OK) {
-	      ctx => doGet(ctx)
+	      ctx => doGet(ctx,subject)
+	    }
+	  }
+    }  ~ 
+    path("register" / Segment) {subject => 
+	  post {
+	    respondWithStatus(OK) {
+	      ctx => doRegister(ctx,subject)
 	    }
 	  }
     }  ~ 
@@ -109,7 +116,35 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
     
   }
   
-  private def doGet[T](ctx:RequestContext) = doRequest(ctx,"intent","get")   
+  private def doGet[T](ctx:RequestContext,subject:String) = {
+	    
+    subject match {	      
+	  /* ../get/loyalty */
+	  case "loyalty" => doRequest(ctx,"intent","get:loyalty")
+
+	  /* ../get/purchase */
+	  case "purchase" => doRequest(ctx,"intent","get:purchase")
+	      
+	  case _ => {}
+	      
+	}
+    
+  }  
+  
+  private def doRegister[T](ctx:RequestContext,subject:String) = {
+	    
+    subject match {	      
+	  /* ../register/loyalty */
+	  case "loyalty" => doRequest(ctx,"intent","register:loyalty")
+
+	  /* ../register/purchase */
+	  case "purchase" => doRequest(ctx,"intent","register:purchase")
+	      
+	  case _ => {}
+	      
+	}
+    
+  }  
     
   private def doTrain[T](ctx:RequestContext) = doRequest(ctx,"intent","train")
 

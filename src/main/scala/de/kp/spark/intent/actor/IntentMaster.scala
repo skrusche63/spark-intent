@@ -19,7 +19,7 @@ package de.kp.spark.intent.actor
  */
 
 import org.apache.spark.SparkContext
-import akka.actor.{Actor,ActorLogging,ActorRef,Props}
+import akka.actor.{ActorRef,Props}
 
 import akka.pattern.ask
 import akka.util.Timeout
@@ -32,7 +32,7 @@ import de.kp.spark.intent.model._
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
 
-class IntentMaster(@transient val sc:SparkContext) extends Actor with ActorLogging {
+class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
   
   val (duration,retries,time) = Configuration.actor   
 
@@ -55,9 +55,9 @@ class IntentMaster(@transient val sc:SparkContext) extends Actor with ActorLoggi
 	    case "get" => ask(actor("questor"),deser).mapTo[ServiceResponse]
 
 	    case "train"  => ask(actor("builder"),deser).mapTo[ServiceResponse]
-
 	    case "status" => ask(actor("builder"),deser).mapTo[ServiceResponse]
 
+	    case "register" => ask(actor("registrar"),deser).mapTo[ServiceResponse]
 	    case "track" => ask(actor("tracker"),deser).mapTo[ServiceResponse]
        
         case _ => {
@@ -97,25 +97,14 @@ class IntentMaster(@transient val sc:SparkContext) extends Actor with ActorLoggi
         
       case "questor" => context.actorOf(Props(new ModelQuestor()))
         
+      case "registrar" => context.actorOf(Props(new IntentRegistrar()))
+        
       case "tracker" => context.actorOf(Props(new IntentTracker()))
       
       case _ => null
       
     }
   
-  }
-  
-  private def failure(req:ServiceRequest,message:String):ServiceResponse = {
-    
-    if (req == null) {
-      val data = Map("message" -> message)
-      new ServiceResponse("","",data,IntentStatus.FAILURE)	
-      
-    } else {
-      val data = Map("uid" -> req.data("uid"), "message" -> message)
-      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
-    
-    }
   }
 
 }

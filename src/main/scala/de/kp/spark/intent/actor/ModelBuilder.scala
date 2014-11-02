@@ -20,7 +20,7 @@ package de.kp.spark.intent.actor
 
 import org.apache.spark.SparkContext
 
-import akka.actor.{Actor,ActorLogging,ActorRef,Props}
+import akka.actor.{ActorRef,Props}
 
 import akka.pattern.ask
 import akka.util.Timeout
@@ -33,7 +33,7 @@ import de.kp.spark.intent.redis.RedisCache
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class ModelBuilder(@transient val sc:SparkContext) extends Actor with ActorLogging {
+class ModelBuilder(@transient val sc:SparkContext) extends BaseActor {
 
   implicit val ec = context.dispatcher
   
@@ -190,20 +190,6 @@ class ModelBuilder(@transient val sc:SparkContext) extends Actor with ActorLoggi
     
     }
     
-  }
-
-  private def failure(req:ServiceRequest,message:String):ServiceResponse = {
-    
-    if (req == null) {
-      val data = Map("message" -> message)
-      new ServiceResponse("","",data,IntentStatus.FAILURE)	
-      
-    } else {
-      val data = Map("uid" -> req.data("uid"), "message" -> message)
-      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
-    
-    }
-  
   }
   
 }

@@ -17,15 +17,25 @@ object Fields {
 
     try {
           
-      val root = if (RedisCache.metaExists(uid)) {      
-        XML.load(RedisCache.meta(uid))
+      if (RedisCache.fieldsExist(uid)) {      
+        
+        val fieldspec = RedisCache.fields(uid)
+        for (field <- fieldspec.items) {
+        
+          val _name = field.name
+          val _type = field.datatype
+          
+          val _mapping = field.value
+          fields += _name -> (_mapping,_type) 
+          
+        }
     
       } else {
         /*
          * In case of no dynamic metadata provided, the field specification
          * is retrieved from pre-defined xml files
          */
-        intent match {
+        val root = intent match {
         
           case Intents.LOYALTY => {
             XML.load(getClass.getClassLoader.getResource(loyalty_xml))           
@@ -38,16 +48,19 @@ object Fields {
           case _ => null
         
         }
-     }
-   
-      for (field <- root \ "field") {
+        
+        if (root == null) throw new Exception("Intent is unknown.")
       
-        val _name  = (field \ "@name").toString
-        val _type  = (field \ "@type").toString
+        for (field <- root \ "field") {
+      
+          val _name  = (field \ "@name").toString
+          val _type  = (field \ "@type").toString
 
-        val _mapping = field.text
-        fields += _name -> (_mapping,_type) 
+          val _mapping = field.text
+          fields += _name -> (_mapping,_type) 
       
+        }
+        
       }
       
     } catch {
