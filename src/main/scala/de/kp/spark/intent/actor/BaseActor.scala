@@ -19,6 +19,8 @@ package de.kp.spark.intent.actor
 */
 
 import akka.actor.{Actor,ActorLogging,ActorRef,Props}
+
+import de.kp.spark.intent.RemoteContext
 import de.kp.spark.intent.model._
 
 abstract class BaseActor extends Actor with ActorLogging {
@@ -35,6 +37,37 @@ abstract class BaseActor extends Actor with ActorLogging {
     
     }
     
+  }
+
+  /**
+   * Notify all registered listeners about a certain status
+   */
+  protected def notify(req:ServiceRequest,status:String) {
+
+    /* Build message */
+    val data = Map("uid" -> req.data("uid"))
+    val response = new ServiceResponse(req.service,req.task,data,status)	
+    
+    /* Notify listeners */
+    val message = Serializer.serializeResponse(response)    
+    RemoteContext.notify(message)
+    
+  }
+  
+  protected def response(req:ServiceRequest,missing:Boolean):ServiceResponse = {
+    
+    val uid = req.data("uid")
+    
+    if (missing == true) {
+      val data = Map("uid" -> uid, "message" -> Messages.MISSING_INTENT(uid))
+      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
+  
+    } else {
+      val data = Map("uid" -> uid, "message" -> Messages.MODEL_BUILDING_STARTED(uid))
+      new ServiceResponse(req.service,req.task,data,IntentStatus.STARTED)	
+  
+    }
+
   }
 
 }

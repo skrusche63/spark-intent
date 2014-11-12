@@ -20,8 +20,6 @@ package de.kp.spark.intent.actor
 
 import org.apache.spark.SparkContext
 
-import akka.actor.{Actor,ActorLogging}
-
 import de.kp.spark.intent.{Configuration}
 
 import de.kp.spark.intent.model._
@@ -36,16 +34,13 @@ import scala.collection.JavaConversions._
  * and provide them as RDDs; building the markov model is independent
  * of Spark 
  */
-class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLogging {
+class MarkovActor(@transient val sc:SparkContext) extends BaseActor {
 
   private def intents = Array(Intents.PURCHASE)
   
   def receive = {
     
     case req:ServiceRequest => {
-
-      val uid = req.data("uid")     
-      val task = req.task
 
       val params = properties(req)
       val missing = (params == null)
@@ -55,14 +50,14 @@ class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLoggin
 
       if (missing == false) {
         /* Register status */
-        RedisCache.addStatus(uid,task,IntentStatus.STARTED)
+        RedisCache.addStatus(req,IntentStatus.STARTED)
  
         try {
 
-          buildModel(uid,task,req.data,params)
+          buildModel(req,req.data,params)
           
         } catch {
-          case e:Exception => RedisCache.addStatus(uid,task,IntentStatus.FAILURE)          
+          case e:Exception => RedisCache.addStatus(req,IntentStatus.FAILURE)          
         }
 
       }
@@ -79,7 +74,7 @@ class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLoggin
     
   }
    
-  private def buildModel(uid:String,task:String,data:Map[String,String],intent:String) {
+  private def buildModel(req:ServiceRequest,data:Map[String,String],intent:String) {
  
     intent match {
             
@@ -88,7 +83,7 @@ class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLoggin
         val source = new PurchaseSource(sc)
         val dataset = source.get(data)
 
-        RedisCache.addStatus(uid,task,IntentStatus.DATASET)
+        RedisCache.addStatus(req,IntentStatus.DATASET)
         
         val scale = source.scaleDef
         val states = source.stateDefs
@@ -97,10 +92,13 @@ class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLoggin
         model.normalize
     
         /* Put model to cache */
-        RedisCache.addModel(uid,model.serialize)
+        RedisCache.addModel(req,model.serialize)
           
         /* Update cache */
-        RedisCache.addStatus(uid,task,IntentStatus.FINISHED)
+        RedisCache.addStatus(req,IntentStatus.FINISHED)
+
+        /* Notify potential listeners */
+        notify(req,IntentStatus.FINISHED)
 
       }
       
@@ -123,22 +121,6 @@ class MarkovActor(@transient val sc:SparkContext) extends Actor with ActorLoggin
       }
     }
     
-  }
-  
-  private def response(req:ServiceRequest,missing:Boolean):ServiceResponse = {
-    
-    val uid = req.data("uid")
-    
-    if (missing == true) {
-      val data = Map("uid" -> uid, "message" -> Messages.MISSING_INTENT(uid))
-      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
-  
-    } else {
-      val data = Map("uid" -> uid, "message" -> Messages.MODEL_BUILDING_STARTED(uid))
-      new ServiceResponse(req.service,req.task,data,IntentStatus.STARTED)	
-  
-    }
-
   }
   
 }

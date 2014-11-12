@@ -40,25 +40,25 @@ object RedisCache {
     
   }
   
-  def addModel(uid:String,model:String) {
+  def addModel(req:ServiceRequest,model:String) {
    
     val now = new Date()
     val timestamp = now.getTime()
     
-    val k = "model:" + service + ":" + uid
+    val k = "model:" + service + ":" + req.data("uid")
     val v = "" + timestamp + ":" + model
     
     client.zadd(k,timestamp,v)
     
   }
   
-  def addStatus(uid:String, task:String, status:String) {
+  def addStatus(req:ServiceRequest,status:String) {
    
     val now = new Date()
     val timestamp = now.getTime()
     
-    val k = "job:" + service + ":" + uid
-    val v = "" + timestamp + ":" + Serializer.serializeJob(JobDesc(service,task,status))
+    val k = "job:" + service + ":" + req.data("uid")
+    val v = "" + timestamp + ":" + Serializer.serializeJob(JobDesc(service,req.task,status))
     
     client.zadd(k,timestamp,v)
     

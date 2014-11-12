@@ -21,7 +21,6 @@ package de.kp.spark.intent.actor
 import org.apache.spark.SparkContext
 
 import java.util.Date
-import akka.actor.{Actor,ActorLogging}
 
 import de.kp.spark.intent.{Configuration}
 
@@ -33,7 +32,7 @@ import de.kp.spark.intent.source.LoyaltySource
 
 import scala.collection.JavaConversions._
 
-class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with ActorLogging {
+class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
 
   private val base = Configuration.markov  
   private val intents = Array(Intents.LOYALTY)
@@ -42,9 +41,6 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with Actor
     
     case req:ServiceRequest => {
 
-      val uid = req.data("uid")     
-      val task = req.task
-
       val params = properties(req)
 
       /* Send response to originator of request */
@@ -52,14 +48,14 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with Actor
 
       if (params != null) {
         /* Register status */
-        RedisCache.addStatus(uid,task,IntentStatus.STARTED)
+        RedisCache.addStatus(req,IntentStatus.STARTED)
  
         try {
 
-            buildModel(uid,task,req.data,params)
+            buildModel(req,req.data,params)
           
         } catch {
-          case e:Exception => RedisCache.addStatus(uid,task,IntentStatus.FAILURE)          
+          case e:Exception => RedisCache.addStatus(req,IntentStatus.FAILURE)          
         }
 
       }
@@ -76,7 +72,7 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with Actor
     
   }
    
-  private def buildModel(uid:String,task:String,data:Map[String,String],params:(String,Int,Double)) {
+  private def buildModel(req:ServiceRequest,data:Map[String,String],params:(String,Int,Double)) {
  
     val (intent,iterations,epsilon) = params
     intent match {
@@ -86,7 +82,7 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with Actor
         val source = new LoyaltySource(sc)
         val dataset = source.get(data)
 
-        RedisCache.addStatus(uid,task,IntentStatus.DATASET)
+        RedisCache.addStatus(req,IntentStatus.DATASET)
         
         val states = source.stateDefs
         val hidden = source.hiddenDefs
@@ -100,10 +96,13 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with Actor
         model.save(dir)
     
         /* Put model to cache */
-        RedisCache.addModel(uid,dir)
+        RedisCache.addModel(req,dir)
           
         /* Update cache */
-        RedisCache.addStatus(uid,task,IntentStatus.FINISHED)
+        RedisCache.addStatus(req,IntentStatus.FINISHED)
+
+        /* Notify potential listeners */
+        notify(req,IntentStatus.FINISHED)
         
       }
       
@@ -133,22 +132,6 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends Actor with Actor
       }
     }
     
-  }
-  
-  private def response(req:ServiceRequest,missing:Boolean):ServiceResponse = {
-    
-    val uid = req.data("uid")
-    
-    if (missing == true) {
-      val data = Map("uid" -> uid, "message" -> Messages.MISSING_PARAMETERS(uid))
-      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
-  
-    } else {
-      val data = Map("uid" -> uid, "message" -> Messages.MODEL_BUILDING_STARTED(uid))
-      new ServiceResponse(req.service,req.task,data,IntentStatus.STARTED)	
-  
-    }
-
   }
   
 }
