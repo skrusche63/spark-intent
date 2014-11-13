@@ -66,17 +66,17 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
    */
   private def routes:Route = {
 
-    path("train") {
-	  post {
-	    respondWithStatus(OK) {
-	      ctx => doTrain(ctx)
-	    }
-	  }
-    }  ~ 
     path("get" / Segment) {subject =>  
 	  post {
 	    respondWithStatus(OK) {
 	      ctx => doGet(ctx,subject)
+	    }
+	  }
+    }  ~ 
+    path("index" / Segment) {subject =>  
+	  post {
+	    respondWithStatus(OK) {
+	      ctx => doIndex(ctx,subject)
 	    }
 	  }
     }  ~ 
@@ -100,7 +100,26 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
 	      ctx => doTrack(ctx,subject)
 	    }
 	  }
-    }     
+    }  ~      
+    path("train") {
+	  post {
+	    respondWithStatus(OK) {
+	      ctx => doTrain(ctx)
+	    }
+	  }
+    }
+    
+  }
+
+  private def doIndex[T](ctx:RequestContext,subject:String) = {
+	    
+    subject match {
+
+      case "amount" => doRequest(ctx,"intent","index:amount")
+	      
+	  case _ => {}
+	  
+    }
     
   }
 

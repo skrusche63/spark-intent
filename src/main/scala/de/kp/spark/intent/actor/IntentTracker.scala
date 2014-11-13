@@ -82,24 +82,18 @@ class IntentTracker extends BaseActor {
   private def createAmount(req:ServiceRequest) {
           
     try {
-      /*
-       * Elasticsearch is used as a source and also as a sink; this implies
-       * that the respective index and mapping must be distinguished; the source
-       * index and mapping used here is the same as for ElasticSource
-       */
-      val index   = req.data("source.index")
-      val mapping = req.data("source.type")
+
+      val index   = req.data("index")
+      val mapping = req.data("type")
     
-      val builder = EBF.getBuilder("amount",mapping)
       val writer = new ElasticWriter()
     
-      /* Prepare index and mapping for write */
-      val readyToWrite = writer.open(index,mapping,builder)
+      val readyToWrite = writer.open(index,mapping)
       if (readyToWrite == false) {
       
         writer.close()
       
-        val msg = String.format("""Opening index '%s' and maping '%s' for write failed.""",index,mapping)
+        val msg = String.format("""Opening index '%s' and mapping '%s' for write failed.""",index,mapping)
         throw new Exception(msg)
       
       } else {

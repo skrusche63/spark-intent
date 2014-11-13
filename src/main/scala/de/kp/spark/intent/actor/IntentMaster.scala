@@ -53,6 +53,7 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
 	  val response = deser.task.split(":")(0) match {
 
 	    case "get" => ask(actor("questor"),deser).mapTo[ServiceResponse]
+	    case "index" => ask(actor("indexer"),deser).mapTo[ServiceResponse]
 
 	    case "train"  => ask(actor("builder"),deser).mapTo[ServiceResponse]
 	    case "status" => ask(actor("builder"),deser).mapTo[ServiceResponse]
@@ -94,6 +95,8 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
     worker match {
   
       case "builder" => context.actorOf(Props(new ModelBuilder(sc)))
+        
+      case "indexer" => context.actorOf(Props(new IntentIndexer()))
         
       case "questor" => context.actorOf(Props(new ModelQuestor()))
         
