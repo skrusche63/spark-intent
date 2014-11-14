@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>spark-intent</groupId>
   <artifactId>spark-intent</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.2.0</version>
   <name>Spark-Intent</name>
   <inceptionYear>2010</inceptionYear>
   <licenses>
@@ -226,9 +226,10 @@
       </plugin>
     </plugins>
   </build>
-  <description>Reactive Intent Recognition Engine</description>
+  <description>Reactive Intent Recognition engine of Predictiveworks.</description>
   <organization>
   	<name>Dr. Krusche &amp; Partner PartG</name>
-  	<url>http://dr-kruscheundpartner.de</url>
+  	<url>http://dr-kruscheundpartner.com</url>
   </organization>
+  <url>https://github.com/skrusche63/spark-intent</url>
 </project>
