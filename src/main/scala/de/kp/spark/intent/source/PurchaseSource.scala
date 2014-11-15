@@ -25,20 +25,42 @@ import de.kp.spark.intent.model._
 
 class PurchaseSource(@transient sc:SparkContext) {
 
-  private val model = new PurchaseModel()
+  private val model = new PurchaseModel(sc)
   
   def get(data:Map[String,String]):RDD[Behavior] = {
+
+    val uid = data("uid")
 
     val source = data("source")
     source match {
 
-      case Sources.ELASTIC => new ElasticSource(sc).purchases(data)
+      case Sources.ELASTIC => {        
 
-      case Sources.FILE => new FileSource(sc).purchases(data)
+        val rawset = new ElasticSource(sc).connect(data)
+        model.buildElastic(uid,rawset)        
+      
+      }
 
-      case Sources.JDBC => new JdbcSource(sc).purchases(data)
+      case Sources.FILE => {
+        
+        val rawset = new FileSource(sc).connect(data)
+        model.buildFile(uid,rawset)        
+        
+      }
 
-      case Sources.PIWIK => new PiwikSource(sc).purchases(data)
+      case Sources.JDBC => {
+        
+        val rawset = new JdbcSource(sc).connect(data)
+        model.buildJDBC(uid,rawset)        
+        
+      }
+
+      case Sources.PIWIK => {
+        
+        val rawset = new PiwikSource(sc).connect(data)
+        model.buildPiwik(uid,rawset)        
+        
+      }
             
       case _ => null
       

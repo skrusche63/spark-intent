@@ -23,81 +23,16 @@ import org.apache.spark.rdd.RDD
 
 import de.kp.spark.intent.io.ElasticReader
 
-import de.kp.spark.intent.model._
-import de.kp.spark.intent.spec.Fields
-
-class ElasticSource(@transient sc:SparkContext) extends Source(sc) {
-  
- override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
-    /*
-     * Elasticsearch is used as a data source as well as a data sink;
-     * this implies that the respective indexes and mappings have to
-     * be distinguished
-     */
-    val index = params("source.index").asInstanceOf[String]
-    val mapping = params("source.type").asInstanceOf[String]
-    
-    val query = params("query").asInstanceOf[String]
-
-    val uid = params("uid").asInstanceOf[String]    
-    val spec = sc.broadcast(Fields.get(uid,Intents.LOYALTY))
-
-    /* 
-     * Connect to Elasticsearch and extract the following fields from 
-     * the respective search index: site, user, timestamp and amount; 
-     * note, that the hidden loyalty states are actually derived from 
-     * the purchase events of the customer only
-     */
-    val rawset = new ElasticReader(sc,index,mapping,query).read
-    val purchases = rawset.map(data => {
-      
-      val site = data(spec.value("site")._1)
-      val user = data(spec.value("user")._1)      
-
-      val timestamp = data(spec.value("timestamp")._1).toLong
-      val amount  = data(spec.value("amount")._1).toFloat
-      
-      new Purchase(site,user,timestamp,amount)
-      
-    })
-    
-    new LoyaltyModel().observations(purchases)
+class ElasticSource(@transient sc:SparkContext) {
  
- }
-  
-  override def purchases(params:Map[String,Any]):RDD[Behavior] = {
-    /*
-     * Elasticsearch is used as a data source as well as a data sink;
-     * this implies that the respective indexes and mappings have to
-     * be distinguished
-     */
-    val index = params("source.index").asInstanceOf[String]
-    val mapping = params("source.type").asInstanceOf[String]
+  def connect(params:Map[String,Any] = Map.empty[String,Any]):RDD[Map[String,String]] = {
+
+    val index = params("index").asInstanceOf[String]
+    val mapping = params("type").asInstanceOf[String]
     
     val query = params("query").asInstanceOf[String]
-
-    val uid = params("uid").asInstanceOf[String]    
-    val spec = sc.broadcast(Fields.get(uid,Intents.PURCHASE))
-
-    /* 
-     * Connect to Elasticsearch and extract the following fields from 
-     * the respective search index: site, user, timestamp and amount
-     */
-    val rawset = new ElasticReader(sc,index,mapping,query).read
-    val purchases = rawset.map(data => {
-      
-      val site = data(spec.value("site")._1)
-      val user = data(spec.value("user")._1)      
-
-      val timestamp = data(spec.value("timestamp")._1).toLong
-      val amount  = data(spec.value("amount")._1).toFloat
-      
-      new Purchase(site,user,timestamp,amount)
-      
-    })
-   
-    new PurchaseModel().behaviors(purchases)
-    
+    new ElasticReader(sc,index,mapping,query).read    
+ 
   }
 
 }

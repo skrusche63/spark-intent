@@ -27,73 +27,21 @@ import de.kp.spark.intent.io.JdbcReader
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.spec.Fields
 
-class JdbcSource(@transient sc:SparkContext) extends Source(sc) {
+class JdbcSource(@transient sc:SparkContext) {
    
   protected val (url,database,user,password) = Configuration.mysql
   
-  override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
+  def connect(params:Map[String,Any] = Map.empty[String,Any]):RDD[Map[String,Any]] = {
     
     val uid = params("uid").asInstanceOf[String]    
     
     val fieldspec = Fields.get(uid,Intents.LOYALTY)
     val fields = fieldspec.map(kv => kv._2._1).toList
-
-    /*
-     * Convert field specification into broadcast variable
-     */
-    val spec = sc.broadcast(fieldspec)
     
-    /* Retrieve site and query from params */
     val site = params("site").asInstanceOf[Int]
     val query = params("query").asInstanceOf[String]
 
-    val rawset = new JdbcReader(sc,site,query).read(fields)
-    val purchases = rawset.map(data => {
-      
-      val site = data(spec.value("site")._1).asInstanceOf[String]
-      val user = data(spec.value("user")._1).asInstanceOf[String] 
-
-      val timestamp = data(spec.value("timestamp")._1).asInstanceOf[Long]
-      val amount  = data(spec.value("amount")._1).asInstanceOf[Float]
-      
-      new Purchase(site,user,timestamp,amount)
-      
-    })
-    
-    new LoyaltyModel().observations(purchases)
-  
-  }
-  
-  override def purchases(params:Map[String,Any]):RDD[Behavior] = {
-    
-    val uid = params("uid").asInstanceOf[String]    
-    
-    val fieldspec = Fields.get(uid,Intents.PURCHASE)
-    val fields = fieldspec.map(kv => kv._2._1).toList
-  
-    /*
-     * Convert field specification into broadcast variable
-     */
-    val spec = sc.broadcast(fieldspec)
-    
-    /* Retrieve site and query from params */
-    val site = params("site").asInstanceOf[Int]
-    val query = params("query").asInstanceOf[String]
-
-    val rawset = new JdbcReader(sc,site,query).read(fields)
-    val purchases = rawset.map(data => {
-      
-      val site = data(spec.value("site")._1).asInstanceOf[String]
-      val user = data(spec.value("user")._1).asInstanceOf[String] 
-
-      val timestamp = data(spec.value("timestamp")._1).asInstanceOf[Long]
-      val amount  = data(spec.value("amount")._1).asInstanceOf[Float]
-      
-      new Purchase(site,user,timestamp,amount)
-      
-    })
-   
-    new PurchaseModel().behaviors(purchases)
+    new JdbcReader(sc,site,query).read(fields)
   
   }
 

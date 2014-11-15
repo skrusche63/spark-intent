@@ -25,20 +25,42 @@ import de.kp.spark.intent.model._
 
 class LoyaltySource(@transient sc:SparkContext) {
 
-  private val model = new LoyaltyModel()
+  private val model = new LoyaltyModel(sc)
   
   def get(data:Map[String,String]):Array[String] = {
 
+    val uid = data("uid")
+    
     val source = data("source")
     source match {
 
-      case Sources.ELASTIC => new ElasticSource(sc).loyalty(data)
+      case Sources.ELASTIC => {
+        
+        val rawset = new ElasticSource(sc).connect(data)    
+        model.buildElastic(uid,rawset)
 
-      case Sources.FILE => new FileSource(sc).loyalty(data)
+      }
 
-      case Sources.JDBC => new JdbcSource(sc).loyalty(data)
+      case Sources.FILE => {
+        
+        val rawset = new FileSource(sc).connect(data)
+        model.buildFile(uid,rawset)
+        
+      }
 
-      case Sources.PIWIK => new PiwikSource(sc).loyalty(data)
+      case Sources.JDBC => {
+        
+        val rawset = new JdbcSource(sc).connect(data)
+        model.buildJDBC(uid,rawset)
+        
+      }
+
+      case Sources.PIWIK => {
+        
+        val rawset = new PiwikSource(sc).connect(data)
+        model.buildPiwik(uid,rawset)
+        
+      }
             
       case _ => null
       

@@ -21,7 +21,6 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-import de.kp.spark.intent.model._
 import de.kp.spark.intent.io.JdbcReader
 
 /**
@@ -48,7 +47,7 @@ class PiwikSource(@transient sc:SparkContext) extends JdbcSource(sc) {
       "revenue_shipping",
       "revenue_discount")
   
- override def loyalty(params:Map[String,Any] = Map.empty[String,Any]):Array[String] = {
+  override def connect(params:Map[String,Any] = Map.empty[String,Any]):RDD[Map[String,Any]] = {
 
     /* Retrieve site, start & end date from params */
     val site = params("site").asInstanceOf[Int]
@@ -59,57 +58,8 @@ class PiwikSource(@transient sc:SparkContext) extends JdbcSource(sc) {
     val sql = query(database,site.toString,startdate,enddate)
     
     val rawset = new JdbcReader(sc,site,sql).read(LOG_FIELDS)    
-    val purchases = rawset.filter(row => (isOrder(row) == false)).map(row => {
-      
-      val site = row("idsite").asInstanceOf[Long]
-      /* Convert 'idvisitor' into a HEX String representation */
-      val idvisitor = row("idvisitor").asInstanceOf[Array[Byte]]     
-      val user = new java.math.BigInteger(1, idvisitor).toString(16)
-      
-      /* Convert 'server_time' into universal timestamp */
-      val server_time = row("server_time").asInstanceOf[java.sql.Timestamp]
-      val timestamp = server_time.getTime()
-
-      val amount = row("revenue").asInstanceOf[Float]
-      
-      new Purchase(site.toString,user,timestamp,amount)
-      
-    })
+    rawset.filter(row => (isOrder(row) == false))
     
-    new LoyaltyModel().observations(purchases)
-    
-  }
-  
-  override def purchases(params:Map[String,Any]):RDD[Behavior] = {
-
-    /* Retrieve site, start & end date from params */
-    val site = params("site").asInstanceOf[Int]
-    
-    val startdate = params("startdate").asInstanceOf[String]
-    val enddate   = params("enddate").asInstanceOf[String]
-
-    val sql = query(database,site.toString,startdate,enddate)
-    
-    val rawset = new JdbcReader(sc,site,sql).read(LOG_FIELDS)    
-    val purchases = rawset.filter(row => (isOrder(row) == false)).map(row => {
-      
-      val site = row("idsite").asInstanceOf[Long]
-      /* Convert 'idvisitor' into a HEX String representation */
-      val idvisitor = row("idvisitor").asInstanceOf[Array[Byte]]     
-      val user = new java.math.BigInteger(1, idvisitor).toString(16)
-      
-      /* Convert 'server_time' into universal timestamp */
-      val server_time = row("server_time").asInstanceOf[java.sql.Timestamp]
-      val timestamp = server_time.getTime()
-
-      val amount = row("revenue").asInstanceOf[Float]
-      
-      new Purchase(site.toString,user,timestamp,amount)
-      
-    })
-   
-    new PurchaseModel().behaviors(purchases)
-
   }
 
   /**
@@ -122,7 +72,7 @@ class PiwikSource(@transient sc:SparkContext) extends JdbcSource(sc) {
     
   }
   
-  /*
+  /**
    * Table: piwik_log_conversion
    */
   private def query(database:String,site:String,startdate:String,enddate:String) = String.format("""
