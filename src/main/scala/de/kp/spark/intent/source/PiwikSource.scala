@@ -22,9 +22,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import de.kp.spark.core.source.JdbcSource
+import de.kp.spark.core.io.JdbcReader
 
 import de.kp.spark.intent.{Configuration => Config}
-import de.kp.spark.intent.io.JdbcReader
 
 /**
  * PiwikSource is an extension of the common JdbcSource that holds Piwik specific
