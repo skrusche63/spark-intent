@@ -20,7 +20,8 @@ package de.kp.spark.intent.rest
 
 import akka.actor.ActorSystem
 
-import de.kp.spark.intent.{Configuration,SparkService}
+import de.kp.spark.core.SparkService
+import de.kp.spark.intent.{Configuration}
 
 object RestServer extends SparkService {
   

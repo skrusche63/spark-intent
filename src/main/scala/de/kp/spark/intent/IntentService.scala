@@ -21,6 +21,7 @@ package de.kp.spark.intent
 import akka.actor.{ActorSystem,Props}
 import com.typesafe.config.ConfigFactory
 
+import de.kp.spark.core.SparkService
 import de.kp.spark.intent.actor.IntentMaster
 
 object IntentService {
