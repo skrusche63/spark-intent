@@ -26,7 +26,7 @@ import de.kp.spark.intent.model._
 import de.kp.spark.intent.redis.RedisCache
 
 import de.kp.spark.intent.markov.MarkovBuilder
-import de.kp.spark.intent.source.{PurchaseSource,Source}
+import de.kp.spark.intent.source.{PurchaseSource}
 
 import scala.collection.JavaConversions._
 /*

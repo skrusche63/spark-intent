@@ -21,6 +21,9 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.core.source.JdbcSource
+
+import de.kp.spark.intent.{Configuration => Config}
 import de.kp.spark.intent.io.JdbcReader
 
 /**
@@ -28,6 +31,8 @@ import de.kp.spark.intent.io.JdbcReader
  * data about fields and types on the server side for convenience.
  */
 class PiwikSource(@transient sc:SparkContext) extends JdbcSource(sc) {
+   
+  private val (url,database,user,password) = Config.mysql
 
   private val LOG_FIELDS = List(
       "idsite",
@@ -47,7 +52,7 @@ class PiwikSource(@transient sc:SparkContext) extends JdbcSource(sc) {
       "revenue_shipping",
       "revenue_discount")
   
-  override def connect(params:Map[String,Any] = Map.empty[String,Any]):RDD[Map[String,Any]] = {
+  override def connect(params:Map[String,Any],fields:List[String]=List.empty[String]):RDD[Map[String,Any]] = {
 
     /* Retrieve site, start & end date from params */
     val site = params("site").asInstanceOf[Int]

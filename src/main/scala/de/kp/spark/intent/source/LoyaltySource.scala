@@ -21,7 +21,10 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.core.source.{ElasticSource,JdbcSource}
+
 import de.kp.spark.intent.model._
+import de.kp.spark.intent.spec.Fields
 
 class LoyaltySource(@transient sc:SparkContext) {
 
@@ -49,8 +52,11 @@ class LoyaltySource(@transient sc:SparkContext) {
       }
 
       case Sources.JDBC => {
+    
+        val fieldspec = Fields.get(uid,Intents.LOYALTY)
+        val fields = fieldspec.map(kv => kv._2._1).toList
         
-        val rawset = new JdbcSource(sc).connect(data)
+        val rawset = new JdbcSource(sc).connect(data,fields)
         model.buildJDBC(uid,rawset)
         
       }
