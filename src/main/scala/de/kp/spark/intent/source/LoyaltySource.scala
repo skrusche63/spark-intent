@@ -21,9 +21,11 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-import de.kp.spark.core.source.{ElasticSource,JdbcSource}
+import de.kp.spark.core.source.{ElasticSource,FileSource,JdbcSource}
 
+import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
+
 import de.kp.spark.intent.spec.Fields
 
 class LoyaltySource(@transient sc:SparkContext) {
@@ -45,8 +47,10 @@ class LoyaltySource(@transient sc:SparkContext) {
       }
 
       case Sources.FILE => {
+
+        val path = Configuration.file()  
         
-        val rawset = new FileSource(sc).connect(data)
+        val rawset = new FileSource(sc).connect(data,path)
         model.buildFile(uid,rawset)
         
       }
