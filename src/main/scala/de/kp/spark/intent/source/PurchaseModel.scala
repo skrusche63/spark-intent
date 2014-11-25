@@ -21,6 +21,7 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.core.model._
 import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.state.PurchaseState
@@ -30,9 +31,9 @@ import scala.collection.mutable.ArrayBuffer
 
 class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Serializable {
  
-  def buildElastic(uid:String,rawset:RDD[Map[String,String]]):RDD[Behavior] = {
+  def buildElastic(req:ServiceRequest,rawset:RDD[Map[String,String]]):RDD[Behavior] = {
     
-    val spec = sc.broadcast(Fields.get(uid,Intents.PURCHASE))
+    val spec = sc.broadcast(Fields.get(req,Intents.PURCHASE))
     val purchases = rawset.map(data => {
       
       val site = data(spec.value("site")._1)
@@ -49,7 +50,7 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
     
   }
 
-  def buildFile(uid:String,rawset:RDD[String]):RDD[Behavior] = {
+  def buildFile(req:ServiceRequest,rawset:RDD[String]):RDD[Behavior] = {
     
     val purchases = rawset.map {line =>
       
@@ -62,9 +63,9 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
     
   }
  
-  def buildJDBC(uid:String,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
+  def buildJDBC(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
     
-    val fieldspec = Fields.get(uid,Intents.PURCHASE)
+    val fieldspec = Fields.get(req,Intents.PURCHASE)
     val fields = fieldspec.map(kv => kv._2._1).toList
   
     val spec = sc.broadcast(fieldspec)
@@ -84,7 +85,7 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
     
   }
  
-  def buildPiwik(uid:String,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
+  def buildPiwik(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
     
     val purchases = rawset.map(row => {
       

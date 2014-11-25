@@ -18,14 +18,16 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+import de.kp.spark.core.model._
 import de.kp.spark.intent.{LoyaltyIntent,PurchaseIntent}
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.redis.RedisCache
+import de.kp.spark.intent.sink.RedisSink
 
 class ModelQuestor extends BaseActor {
 
   implicit val ec = context.dispatcher
+  private val sink = new RedisSink()
   
   def receive = {
     
@@ -38,7 +40,7 @@ class ModelQuestor extends BaseActor {
 
         case "get:loyalty" => {
 
-          val resp = if (RedisCache.modelExists(uid) == false) {           
+          val resp = if (sink.modelExists(uid) == false) {           
             failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
             
           } else {    
@@ -57,7 +59,7 @@ class ModelQuestor extends BaseActor {
     
         case "get:purchase" => {
 
-          val resp = if (RedisCache.modelExists(uid) == false) {           
+          val resp = if (sink.modelExists(uid) == false) {           
             failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
             
           } else {   

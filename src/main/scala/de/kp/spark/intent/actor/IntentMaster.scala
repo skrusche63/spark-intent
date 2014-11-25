@@ -25,6 +25,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 import akka.actor.{OneForOneStrategy, SupervisorStrategy}
+import de.kp.spark.core.model._
 
 import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._

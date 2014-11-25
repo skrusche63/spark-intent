@@ -21,12 +21,14 @@ package de.kp.spark.intent
 import de.kp.spark.intent.markov.TransitionMatrix
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.redis.RedisCache
+import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.state.PurchaseState
 import scala.collection.mutable.ArrayBuffer
 
 class PurchaseIntent extends PurchaseState {
+  
+  private val sink = new RedisSink()
   
   def predict(uid:String,data:Map[String,String]):String = {
     
@@ -36,7 +38,7 @@ class PurchaseIntent extends PurchaseState {
     matrix.setScale(FD_SCALE)
     matrix.setStates(FD_STATE_DEFS,FD_STATE_DEFS)
 
-    val model = RedisCache.model(uid)
+    val model = sink.model(uid)
     matrix.deserialize(model)
     
     data.get("purchases") match {

@@ -18,8 +18,8 @@ package de.kp.spark.intent.actor
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
+import de.kp.spark.core.model._
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.redis.RedisCache
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -49,7 +49,7 @@ class IntentRegistrar extends BaseActor {
             fields += new Field("user","string",req.data("user"))
             fields += new Field("amount","float",req.data("amount"))
             
-            RedisCache.addFields(req, new Fields(fields.toList))
+            cache.addFields(req, new Fields(fields.toList))
         
             new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
         
@@ -74,7 +74,7 @@ class IntentRegistrar extends BaseActor {
             fields += new Field("user","string",req.data("user"))
             fields += new Field("amount","float",req.data("amount"))
             
-            RedisCache.addFields(req, new Fields(fields.toList))
+            cache.addFields(req, new Fields(fields.toList))
         
             new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
         

@@ -21,6 +21,7 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.core.model._
 import de.kp.spark.core.source.{ElasticSource,FileSource,JdbcSource}
 
 import de.kp.spark.intent.Configuration
@@ -32,17 +33,17 @@ class LoyaltySource(@transient sc:SparkContext) {
 
   private val model = new LoyaltyModel(sc)
   
-  def get(data:Map[String,String]):Array[String] = {
+  def get(req:ServiceRequest):Array[String] = {
 
-    val uid = data("uid")
+    val uid = req.data("uid")
     
-    val source = data("source")
+    val source = req.data("source")
     source match {
 
       case Sources.ELASTIC => {
         
-        val rawset = new ElasticSource(sc).connect(data)    
-        model.buildElastic(uid,rawset)
+        val rawset = new ElasticSource(sc).connect(req.data)    
+        model.buildElastic(req,rawset)
 
       }
 
@@ -50,25 +51,25 @@ class LoyaltySource(@transient sc:SparkContext) {
 
         val path = Configuration.file()  
         
-        val rawset = new FileSource(sc).connect(data,path)
-        model.buildFile(uid,rawset)
+        val rawset = new FileSource(sc).connect(req.data,path)
+        model.buildFile(req,rawset)
         
       }
 
       case Sources.JDBC => {
     
-        val fieldspec = Fields.get(uid,Intents.LOYALTY)
+        val fieldspec = Fields.get(req,Intents.LOYALTY)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
-        val rawset = new JdbcSource(sc).connect(data,fields)
-        model.buildJDBC(uid,rawset)
+        val rawset = new JdbcSource(sc).connect(req.data,fields)
+        model.buildJDBC(req,rawset)
         
       }
 
       case Sources.PIWIK => {
         
-        val rawset = new PiwikSource(sc).connect(data)
-        model.buildPiwik(uid,rawset)
+        val rawset = new PiwikSource(sc).connect(req.data)
+        model.buildPiwik(req,rawset)
         
       }
             

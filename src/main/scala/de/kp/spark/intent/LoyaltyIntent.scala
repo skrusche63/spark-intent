@@ -19,7 +19,7 @@ package de.kp.spark.intent
  */
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.redis.RedisCache
+import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.HiddenMarkovModel
 import de.kp.spark.intent.state.LoyaltyState
@@ -28,11 +28,12 @@ import scala.collection.mutable.ArrayBuffer
 
 class LoyaltyIntent extends LoyaltyState {
   
+  private val sink = new RedisSink()
   def predict(uid:String,data:Map[String,String]):String = {
     
     val model = new HiddenMarkovModel()
 
-    val path = RedisCache.model(uid)    
+    val path = sink.model(uid)    
     model.load(path)
     
     data.get("purchases") match {

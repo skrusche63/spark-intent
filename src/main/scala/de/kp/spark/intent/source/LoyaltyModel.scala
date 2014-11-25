@@ -21,6 +21,7 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.core.model._
 import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.state.LoyaltyState
@@ -30,9 +31,9 @@ import scala.collection.mutable.ArrayBuffer
 
 class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Serializable {
   
-  def buildElastic(uid:String,rawset:RDD[Map[String,String]]):Array[String] = {
+  def buildElastic(req:ServiceRequest,rawset:RDD[Map[String,String]]):Array[String] = {
 
-    val spec = sc.broadcast(Fields.get(uid,Intents.LOYALTY))
+    val spec = sc.broadcast(Fields.get(req,Intents.LOYALTY))
 
     val purchases = rawset.map(data => {
       
@@ -50,7 +51,7 @@ class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Seriali
     
   }
 
-  def buildFile(uid:String,rawset:RDD[String]):Array[String] = {
+  def buildFile(req:ServiceRequest,rawset:RDD[String]):Array[String] = {
     
     val purchases = rawset.map {line =>
       
@@ -63,9 +64,9 @@ class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Seriali
     
   }
   
-  def buildJDBC(uid:String,rawset:RDD[Map[String,Any]]):Array[String] = {
+  def buildJDBC(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
     
-    val fieldspec = Fields.get(uid,Intents.LOYALTY)
+    val fieldspec = Fields.get(req,Intents.LOYALTY)
     val fields = fieldspec.map(kv => kv._2._1).toList
 
     val spec = sc.broadcast(fieldspec)
@@ -85,7 +86,7 @@ class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Seriali
     
   }
   
-  def buildPiwik(uid:String,rawset:RDD[Map[String,Any]]):Array[String] = {
+  def buildPiwik(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
     
     val purchases = rawset.map(row => {
       

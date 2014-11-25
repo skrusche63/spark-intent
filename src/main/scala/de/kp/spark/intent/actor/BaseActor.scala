@@ -20,11 +20,16 @@ package de.kp.spark.intent.actor
 
 import akka.actor.{Actor,ActorLogging,ActorRef,Props}
 
+import de.kp.spark.core.model._
+import de.kp.spark.core.redis.RedisCache
+
 import de.kp.spark.intent.RemoteContext
 import de.kp.spark.intent.model._
 
 abstract class BaseActor extends Actor with ActorLogging {
- 
+
+  protected val cache = new RedisCache()
+  
   protected def failure(req:ServiceRequest,message:String):ServiceResponse = {
     
     if (req == null) {

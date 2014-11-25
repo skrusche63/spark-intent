@@ -18,6 +18,8 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+import de.kp.spark.core.model._
+
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.io.{ElasticBuilderFactory => EBF,ElasticIndexer}
 

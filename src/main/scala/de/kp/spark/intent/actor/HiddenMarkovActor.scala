@@ -22,10 +22,12 @@ import org.apache.spark.SparkContext
 
 import java.util.Date
 
-import de.kp.spark.intent.{Configuration}
+import de.kp.spark.core.model._
 
+import de.kp.spark.intent.{Configuration}
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.redis.RedisCache
+
+import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.HiddenMarkovTrainer
 import de.kp.spark.intent.source.LoyaltySource
@@ -37,6 +39,8 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
   private val base = Configuration.markov  
   private val intents = Array(Intents.LOYALTY)
 
+  private val sink = new RedisSink()
+  
   def receive = {
     
     case req:ServiceRequest => {
@@ -48,14 +52,14 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
 
       if (params != null) {
         /* Register status */
-        RedisCache.addStatus(req,IntentStatus.STARTED)
+        cache.addStatus(req,IntentStatus.STARTED)
  
         try {
 
             buildModel(req,req.data,params)
           
         } catch {
-          case e:Exception => RedisCache.addStatus(req,IntentStatus.FAILURE)          
+          case e:Exception => cache.addStatus(req,IntentStatus.FAILURE)          
         }
 
       }
@@ -80,9 +84,9 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
       case Intents.LOYALTY => {
               
         val source = new LoyaltySource(sc)
-        val dataset = source.get(data)
+        val dataset = source.get(req)
 
-        RedisCache.addStatus(req,IntentStatus.DATASET)
+        cache.addStatus(req,IntentStatus.DATASET)
         
         val states = source.stateDefs
         val hidden = source.hiddenDefs
@@ -95,11 +99,11 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
         /* Save model in directory of file system */
         model.save(dir)
     
-        /* Put model to cache */
-        RedisCache.addModel(req,dir)
+        /* Put model to sink */
+        sink.addModel(req,dir)
           
         /* Update cache */
-        RedisCache.addStatus(req,IntentStatus.FINISHED)
+        cache.addStatus(req,IntentStatus.FINISHED)
 
         /* Notify potential listeners */
         notify(req,IntentStatus.FINISHED)
