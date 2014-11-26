@@ -19,9 +19,9 @@ package de.kp.spark.intent.actor
  */
 
 import de.kp.spark.core.model._
-import de.kp.spark.intent.model._
+import de.kp.spark.core.io.ElasticWriter
 
-import de.kp.spark.intent.io.ElasticWriter
+import de.kp.spark.intent.model._
 import de.kp.spark.intent.io.{ElasticBuilderFactory => EBF}
 
 import scala.collection.JavaConversions._
