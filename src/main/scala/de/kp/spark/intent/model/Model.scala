@@ -84,14 +84,11 @@ object Messages extends BaseMessages {
   
 }
 
-object IntentStatus {
+object IntentStatus extends BaseStatus {
   
   val DATASET:String = "dataset"
     
   val STARTED:String = "started"
   val FINISHED:String = "finished"
-  
-  val FAILURE:String = "failure"
-  val SUCCESS:String = "success"
     
 }
