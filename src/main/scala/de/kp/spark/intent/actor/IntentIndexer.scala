@@ -19,9 +19,10 @@ package de.kp.spark.intent.actor
  */
 
 import de.kp.spark.core.model._
+import de.kp.spark.core.io.ElasticIndexer
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.io.{ElasticBuilderFactory => EBF,ElasticIndexer}
+import de.kp.spark.intent.io.{ElasticBuilderFactory => EBF}
 
 class IntentIndexer extends BaseActor {
   
