@@ -1,4 +1,4 @@
-package de.kp.spark.intent.rest
+package de.kp.spark.intent.api
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -18,27 +18,16 @@ package de.kp.spark.intent.rest
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import akka.actor.ActorSystem
+import org.apache.spark.SparkContext
+import akka.actor.{ActorSystem,Props}
 
-import de.kp.spark.core.SparkService
-import de.kp.spark.intent.{Configuration}
+import de.kp.spark.intent.actor.IntentMaster
 
-object RestServer extends SparkService {
-  
-  /* Create Spark context */
-  private val sc = createCtxLocal("IntentContext",Configuration.spark)      
-  
-  private def start(args:Array[String],system:ActorSystem) {
+class AkkaApi(system:ActorSystem,@transient val sc:SparkContext) {
 
-    val (host,port) = Configuration.rest
-    
-    /* Start REST API */
-    new RestApi(host,port,system,sc).start()
-      
+  val master = system.actorOf(Props(new IntentMaster(sc)), name="intent-master")
+
+  def start() {
+     while (true) {}   
   }
-  
-  def main(args: Array[String]) {
-    start(args, ActorSystem("RestServer"))
-  }
-  
 }

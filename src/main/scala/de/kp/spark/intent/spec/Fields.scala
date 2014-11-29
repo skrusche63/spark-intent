@@ -21,6 +21,7 @@ package de.kp.spark.intent.spec
 import de.kp.spark.core.model._
 import de.kp.spark.core.redis.RedisCache
 
+import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
 
 import scala.xml._
@@ -31,7 +32,8 @@ object Fields {
   val loyalty_xml:String  = "loyalty_fields.xml"
   val purchase_xml:String = "purchase_fields.xml"
 
-  val cache = new RedisCache()
+  val (host,port) = Configuration.redis
+  val cache = new RedisCache(host,port.toInt)
   
   def get(req:ServiceRequest,intent:String):Map[String,(String,String)] = {
     
