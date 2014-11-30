@@ -18,11 +18,12 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+import de.kp.spark.core.Names
+
 import de.kp.spark.core.model._
 import de.kp.spark.core.io.ElasticWriter
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.io.{ElasticBuilderFactory => EBF}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
@@ -69,12 +70,12 @@ class IntentTracker extends BaseActor {
     
     val source = HashMap.empty[String,String]
     
-    source += EBF.SITE_FIELD -> params(EBF.SITE_FIELD)
-    source += EBF.USER_FIELD -> params(EBF.USER_FIELD)
+    source += Names.SITE_FIELD -> params(Names.SITE_FIELD)
+    source += Names.USER_FIELD -> params(Names.USER_FIELD)
       
-    source += EBF.TIMESTAMP_FIELD -> params(EBF.TIMESTAMP_FIELD)
+    source += Names.TIMESTAMP_FIELD -> params(Names.TIMESTAMP_FIELD)
  
-    source += EBF.AMOUNT_FIELD -> params(EBF.AMOUNT_FIELD)
+    source += Names.AMOUNT_FIELD -> params(Names.AMOUNT_FIELD)
 
     source
     
