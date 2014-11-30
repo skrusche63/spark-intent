@@ -51,7 +51,7 @@ class IntentIndexer extends BaseActor {
             val data = Map("uid" -> uid, "message" -> Messages.SEARCH_INDEX_CREATED(uid))
             val response = new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)	
       
-            origin ! Serializer.serializeResponse(response)
+            origin ! response
             context.stop(self)
           
           }
@@ -60,7 +60,7 @@ class IntentIndexer extends BaseActor {
           
             val msg = Messages.TASK_IS_UNKNOWN(uid,req.task)
           
-            origin ! Serializer.serializeResponse(failure(req,msg))
+            origin ! failure(req,msg)
             context.stop(self)
           
           }
@@ -77,7 +77,7 @@ class IntentIndexer extends BaseActor {
           val response = new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
       
           val origin = sender
-          origin ! Serializer.serializeResponse(response)
+          origin ! response
           
         }
       

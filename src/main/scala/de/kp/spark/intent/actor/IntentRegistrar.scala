@@ -57,7 +57,7 @@ class IntentRegistrar extends BaseActor {
             case throwable:Throwable => failure(req,throwable.getMessage)
           }
       
-          origin ! Serializer.serializeResponse(response)
+          origin ! response
           
         } 
         
@@ -82,7 +82,7 @@ class IntentRegistrar extends BaseActor {
             case throwable:Throwable => failure(req,throwable.getMessage)
           }
       
-          origin ! Serializer.serializeResponse(response)
+          origin ! response
           
         }
         
@@ -90,7 +90,7 @@ class IntentRegistrar extends BaseActor {
           
           val msg = Messages.TASK_IS_UNKNOWN(uid,req.task)
           
-          origin ! Serializer.serializeResponse(failure(req,msg))
+          origin ! failure(req,msg)
           context.stop(self)
           
         }
