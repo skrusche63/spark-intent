@@ -31,6 +31,7 @@ import de.kp.spark.intent.spec.Fields
 
 class LoyaltySource(@transient sc:SparkContext) {
 
+  private val config = Configuration
   private val model = new LoyaltyModel(sc)
   
   def get(req:ServiceRequest):Array[String] = {
@@ -42,16 +43,14 @@ class LoyaltySource(@transient sc:SparkContext) {
 
       case Sources.ELASTIC => {
         
-        val rawset = new ElasticSource(sc).connect(req.data)    
+        val rawset = new ElasticSource(sc).connect(config,req)    
         model.buildElastic(req,rawset)
 
       }
 
       case Sources.FILE => {
-
-        val path = Configuration.file()  
         
-        val rawset = new FileSource(sc).connect(req.data,path)
+        val rawset = new FileSource(sc).connect(config.file(0),req)
         model.buildFile(req,rawset)
         
       }
@@ -61,14 +60,14 @@ class LoyaltySource(@transient sc:SparkContext) {
         val fieldspec = Fields.get(req,Intents.LOYALTY)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
-        val rawset = new JdbcSource(sc).connect(req.data,fields)
+        val rawset = new JdbcSource(sc).connect(config,req,fields)
         model.buildJDBC(req,rawset)
         
       }
 
       case Sources.PIWIK => {
         
-        val rawset = new PiwikSource(sc).connect(req.data)
+        val rawset = new PiwikSource(sc).connect(config,req)
         model.buildPiwik(req,rawset)
         
       }
