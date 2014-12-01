@@ -57,6 +57,8 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
   val (duration,retries,time) = Configuration.actor   
   val master = system.actorOf(Props(new IntentMaster(sc)), name="intent-master")
  
+  private val service = "intent"
+    
   def start() {
     RestService.start(routes,system,host,port)
   }
@@ -66,6 +68,13 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
    */
   private def routes:Route = {
 
+    path("admin" / Segment) {subject =>  
+	  post {
+	    respondWithStatus(OK) {
+	      ctx => doAdmin(ctx,subject)
+	    }
+	  }
+    }  ~  
     path("get" / Segment) {subject =>  
 	  post {
 	    respondWithStatus(OK) {
@@ -87,13 +96,6 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
 	    }
 	  }
     }  ~ 
-    path("status") {
-	  post {
-	    respondWithStatus(OK) {
-	      ctx => doStatus(ctx)
-	    }
-	  }
-    }  ~ 
     path("track" / Segment) {subject => 
 	  post {
 	    respondWithStatus(OK) {
@@ -110,12 +112,25 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
     }
     
   }
+  
+  private def doAdmin[T](ctx:RequestContext,subject:String) = {
+    
+    subject match {
+      
+      case "fields" => doRequest(ctx,service,subject)
+      case "status" => doRequest(ctx,service,subject)
+      
+      case _ => {}
+      
+    }
+    
+  }
 
   private def doIndex[T](ctx:RequestContext,subject:String) = {
 	    
     subject match {
 
-      case "amount" => doRequest(ctx,"intent","index:amount")
+      case "amount" => doRequest(ctx,service,"index:amount")
 	      
 	  case _ => {}
 	  
@@ -127,7 +142,7 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
 	    
     subject match {
 
-      case "amount" => doRequest(ctx,"intent","track:amount")
+      case "amount" => doRequest(ctx,service,"track:amount")
 	      
 	  case _ => {}
 	  
@@ -139,10 +154,10 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
 	    
     subject match {	      
 	  /* ../get/loyalty */
-	  case "loyalty" => doRequest(ctx,"intent","get:loyalty")
+	  case "loyalty" => doRequest(ctx,service,"get:loyalty")
 
 	  /* ../get/purchase */
-	  case "purchase" => doRequest(ctx,"intent","get:purchase")
+	  case "purchase" => doRequest(ctx,service,"get:purchase")
 	      
 	  case _ => {}
 	      
@@ -154,10 +169,10 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
 	    
     subject match {	      
 	  /* ../register/loyalty */
-	  case "loyalty" => doRequest(ctx,"intent","register:loyalty")
+	  case "loyalty" => doRequest(ctx,service,"register:loyalty")
 
 	  /* ../register/purchase */
-	  case "purchase" => doRequest(ctx,"intent","register:purchase")
+	  case "purchase" => doRequest(ctx,service,"register:purchase")
 	      
 	  case _ => {}
 	      
@@ -165,9 +180,7 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
     
   }  
     
-  private def doTrain[T](ctx:RequestContext) = doRequest(ctx,"intent","train")
-
-  private def doStatus[T](ctx:RequestContext) = doRequest(ctx,"intent","status")
+  private def doTrain[T](ctx:RequestContext) = doRequest(ctx,service,"train")
   
   private def doRequest[T](ctx:RequestContext,service:String,task:String="train") = {
      

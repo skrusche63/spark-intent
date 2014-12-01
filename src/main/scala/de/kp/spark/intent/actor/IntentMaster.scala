@@ -90,11 +90,13 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
 	  
     req.task.split(":")(0) match {
 
+	  case "fields" => ask(actor("fields"),req).mapTo[ServiceResponse]
+	  
 	  case "get" => ask(actor("questor"),req).mapTo[ServiceResponse]
 	  case "index" => ask(actor("indexer"),req).mapTo[ServiceResponse]
 
 	  case "train"  => ask(actor("builder"),req).mapTo[ServiceResponse]
-	  case "status" => ask(actor("monitor"),req).mapTo[ServiceResponse]
+	  case "status" => ask(actor("status"),req).mapTo[ServiceResponse]
 
 	  case "register" => ask(actor("registrar"),req).mapTo[ServiceResponse]
 	  case "track" => ask(actor("tracker"),req).mapTo[ServiceResponse]
@@ -112,14 +114,16 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
     worker match {
   
       case "builder" => context.actorOf(Props(new ModelBuilder(sc)))
+       
+      case "fields" => context.actorOf(Props(new FieldMonitor()))
         
       case "indexer" => context.actorOf(Props(new IntentIndexer()))
-        
-      case "monitor" => context.actorOf(Props(new IntentMonitor()))
-        
+         
       case "questor" => context.actorOf(Props(new ModelQuestor()))
         
       case "registrar" => context.actorOf(Props(new IntentRegistrar()))
+       
+      case "status" => context.actorOf(Props(new StatusMonitor()))
         
       case "tracker" => context.actorOf(Props(new IntentTracker()))
       

@@ -18,7 +18,7 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import de.kp.spark.core.actor.StatusMonitor
+import de.kp.spark.core.actor.FieldQuestor
 import de.kp.spark.intent.Configuration
 
-class IntentMonitor extends StatusMonitor(Configuration)
+class FieldMonitor extends FieldQuestor(Configuration)
