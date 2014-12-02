@@ -49,7 +49,7 @@ class IntentRegistrar extends BaseActor {
             fields += new Field("user","string",req.data("user"))
             fields += new Field("amount","float",req.data("amount"))
             
-            cache.addFields(req, new Fields(fields.toList))
+            cache.addFields(req, fields.toList)
         
             new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
         
@@ -74,7 +74,7 @@ class IntentRegistrar extends BaseActor {
             fields += new Field("user","string",req.data("user"))
             fields += new Field("amount","float",req.data("amount"))
             
-            cache.addFields(req, new Fields(fields.toList))
+            cache.addFields(req, fields.toList)
         
             new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
         
