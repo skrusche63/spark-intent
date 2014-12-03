@@ -18,10 +18,11 @@ package de.kp.spark.intent.actor
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
+import de.kp.spark.core.Names
+import de.kp.spark.core.spec.FieldBuilder
+
 import de.kp.spark.core.model._
 import de.kp.spark.intent.model._
-
-import scala.collection.mutable.ArrayBuffer
 
 class IntentRegistrar extends BaseActor {
 
@@ -32,70 +33,46 @@ class IntentRegistrar extends BaseActor {
     case req:ServiceRequest => {
       
       val origin = sender
-      val uid = req.data("uid")
-      
-      req.task match {
-        
-        case "register:loyalty" => {
+      val uid = req.data(Names.REQ_UID)
        
-          val response = try {
+      val response = try {
+ 
+        req.task.split(":")(1) match {
         
-            /* Unpack fields from request and register in Redis instance */
-            val fields = ArrayBuffer.empty[Field]
-
-            fields += new Field("site","string",req.data("site"))
-            fields += new Field("timestamp","long",req.data("timestamp"))
-
-            fields += new Field("user","string",req.data("user"))
-            fields += new Field("amount","float",req.data("amount"))
-            
-            cache.addFields(req, fields.toList)
+          case "loyalty" => {
         
-            new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
+            val fields = new FieldBuilder().build(req,"amount")            
+            cache.addFields(req, fields)
         
-          } catch {
-            case throwable:Throwable => failure(req,throwable.getMessage)
-          }
-      
-          origin ! response
+            new ServiceResponse(req.service,req.task,Map(Names.REQ_UID-> uid),IntentStatus.SUCCESS)
           
-        } 
-        
-        case "register:purchase" => {
-      
-          val response = try {
-        
-            /* Unpack fields from request and register in Redis instance */
-            val fields = ArrayBuffer.empty[Field]
-
-            fields += new Field("site","string",req.data("site"))
-            fields += new Field("timestamp","long",req.data("timestamp"))
-
-            fields += new Field("user","string",req.data("user"))
-            fields += new Field("amount","float",req.data("amount"))
-            
-            cache.addFields(req, fields.toList)
-        
-            new ServiceResponse("intent","register",Map("uid"-> uid),IntentStatus.SUCCESS)
-        
-          } catch {
-            case throwable:Throwable => failure(req,throwable.getMessage)
           }
-      
-          origin ! response
+           
+          case "purchase" => {
+        
+            val fields = new FieldBuilder().build(req,"amount")            
+            cache.addFields(req, fields)
+        
+            new ServiceResponse(req.service,req.task,Map(Names.REQ_UID-> uid),IntentStatus.SUCCESS)
+          
+          }
+
+          case _ => {
+          
+            val msg = Messages.TASK_IS_UNKNOWN(uid,req.task)
+            failure(req,msg)
+          
+          }
           
         }
         
-        case _ => {
-          
-          val msg = Messages.TASK_IS_UNKNOWN(uid,req.task)
-          
-          origin ! failure(req,msg)
-          context.stop(self)
-          
-        }
-        
+      } catch {
+        case throwable:Throwable => failure(req,throwable.getMessage)
       }
+      
+      origin ! response
+      context.stop(self)       
+
     }
   
   }
