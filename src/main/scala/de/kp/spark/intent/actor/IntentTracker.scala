@@ -19,54 +19,16 @@ package de.kp.spark.intent.actor
  */
 
 import de.kp.spark.core.Names
+import de.kp.spark.core.actor.BaseTracker
 
-import de.kp.spark.core.model._
-import de.kp.spark.core.io.ElasticWriter
-
-import de.kp.spark.intent.model._
+import de.kp.spark.intent.Configuration
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 
-class IntentTracker extends BaseActor {
+class IntentTracker extends BaseTracker(Configuration) {
   
-  def receive = {
-    
-    case req:ServiceRequest => {
-     
-      val origin = sender    
-      val uid = req.data("uid")
-
-      req.task match {
-        
-        case "track:amount" => {
-          
-          val data = Map("uid" -> uid, "message" -> Messages.DATA_TO_TRACK_RECEIVED(uid))
-          val response = new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)	
-      
-          origin ! response
-          
-          createAmount(req)
-          context.stop(self)
-          
-        }
-        
-        case _ => {
-          
-          val msg = Messages.TASK_IS_UNKNOWN(uid,req.task)
-          
-          origin ! failure(req,msg)
-          context.stop(self)
-          
-        }
-        
-      }
-
-    }
-    
-  }
-  
-  private def prepareAmount(params:Map[String,String]):java.util.Map[String,Object] = {
+  override def prepareAmount(params:Map[String,String]):java.util.Map[String,Object] = {
     
     val source = HashMap.empty[String,String]
     
@@ -78,48 +40,6 @@ class IntentTracker extends BaseActor {
     source += Names.AMOUNT_FIELD -> params(Names.AMOUNT_FIELD)
 
     source
-    
-  }
-
-  private def createAmount(req:ServiceRequest) {
-          
-    try {
-
-      val index   = req.data("index")
-      val mapping = req.data("type")
-    
-      val writer = new ElasticWriter()
-    
-      val readyToWrite = writer.open(index,mapping)
-      if (readyToWrite == false) {
-      
-        writer.close()
-      
-        val msg = String.format("""Opening index '%s' and mapping '%s' for write failed.""",index,mapping)
-        throw new Exception(msg)
-      
-      } else {
-      
-        /* Prepare data */
-        val source = prepareAmount(req.data)
-        /*
-         * Writing this source to the respective index throws an
-         * exception in case of an error; note, that the writer is
-         * automatically closed 
-         */
-        writer.write(index, mapping, source)
-        
-      }
-      
-    } catch {
-        
-      case e:Exception => {
-        log.error(e, e.getMessage())
-      }
-      
-    } finally {
-
-    }
     
   }
  
