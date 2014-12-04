@@ -99,7 +99,7 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
 	  case "status" => ask(actor("status"),req).mapTo[ServiceResponse]
 
 	  case "register" => ask(actor("registrar"),req).mapTo[ServiceResponse]
-	  case "track" => ask(actor("tracker"),req).mapTo[ServiceResponse]
+	  case "track" => ask(actor("track"),req).mapTo[ServiceResponse]
        
       case _ => Future {     
         failure(req,Messages.TASK_IS_UNKNOWN(req.data("uid"),req.task))
@@ -125,7 +125,7 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
        
       case "status" => context.actorOf(Props(new StatusMonitor()))
         
-      case "tracker" => context.actorOf(Props(new IntentTracker()))
+      case "track" => context.actorOf(Props(new TrackActor()))
       
       case _ => null
       
