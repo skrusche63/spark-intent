@@ -25,6 +25,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 import akka.actor.{OneForOneStrategy, SupervisorStrategy}
+
+import de.kp.spark.core.actor._
 import de.kp.spark.core.model._
 
 import de.kp.spark.intent.Configuration
@@ -33,7 +35,7 @@ import de.kp.spark.intent.model._
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
 
-class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
+class IntentMaster(@transient sc:SparkContext) extends BaseActor {
   
   val (duration,retries,time) = Configuration.actor   
       
@@ -87,24 +89,18 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
   }
 
   private def execute(req:ServiceRequest):Future[ServiceResponse] = {
-	  
-    req.task.split(":")(0) match {
-
-	  case "fields" => ask(actor("fields"),req).mapTo[ServiceResponse]
-	  
-	  case "get" => ask(actor("questor"),req).mapTo[ServiceResponse]
-	  case "index" => ask(actor("indexer"),req).mapTo[ServiceResponse]
-
-	  case "train"  => ask(actor("builder"),req).mapTo[ServiceResponse]
-	  case "status" => ask(actor("status"),req).mapTo[ServiceResponse]
-
-	  case "register" => ask(actor("registrar"),req).mapTo[ServiceResponse]
-	  case "track" => ask(actor("track"),req).mapTo[ServiceResponse]
-       
-      case _ => Future {     
-        failure(req,Messages.TASK_IS_UNKNOWN(req.data("uid"),req.task))
-      }
+	
+    try {
       
+      val task = req.task.split(":")(0)
+      ask(actor(task),req).mapTo[ServiceResponse]
+    
+    } catch {
+      
+      case e:Exception => {
+        Future {failure(req,e.getMessage)}         
+      }
+    
     }
     
   }
@@ -112,20 +108,30 @@ class IntentMaster(@transient val sc:SparkContext) extends BaseActor {
   private def actor(worker:String):ActorRef = {
     
     worker match {
-  
-      case "builder" => context.actorOf(Props(new ModelBuilder(sc)))
-       
-      case "fields" => context.actorOf(Props(new FieldMonitor()))
-        
-      case "indexer" => context.actorOf(Props(new IntentIndexer()))
+      /*
+       * Metadata management is part of the core functionality; field or metadata
+       * specifications can be registered in, and retrieved from a Redis database.
+       */
+      case "fields"   => context.actorOf(Props(new FieldQuestor(Configuration)))        
+      case "register" => context.actorOf(Props(new BaseRegistrar(Configuration)))
+      /*
+       * Index management is part of the core functionality; an Elasticsearch 
+       * index can be created and appropriate (tracked) items can be saved.
+       */  
+      case "index" => context.actorOf(Props(new BaseIndexer(Configuration)))
+      case "track" => context.actorOf(Props(new BaseTracker(Configuration)))
+
+      /*
+       * Request the actual status of an association rule mining 
+       * task; note, that get requests should only be invoked after 
+       * having retrieved a FINISHED status.
+       * 
+       * Status management is part of the core functionality.
+       */
+      case "status" => context.actorOf(Props(new StatusQuestor(Configuration)))
          
-      case "questor" => context.actorOf(Props(new ModelQuestor()))
-        
-      case "registrar" => context.actorOf(Props(new IntentRegistrar()))
-       
-      case "status" => context.actorOf(Props(new StatusMonitor()))
-        
-      case "track" => context.actorOf(Props(new TrackActor()))
+      case "get" => context.actorOf(Props(new ModelQuestor()))
+      case "train" => context.actorOf(Props(new ModelBuilder(sc)))
       
       case _ => null
       
