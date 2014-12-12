@@ -19,9 +19,7 @@ package de.kp.spark.intent.actor
  */
 
 import de.kp.spark.core.Names
-
 import de.kp.spark.core.model._
-import de.kp.spark.intent.{LoyaltyIntent,PurchaseIntent}
 
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
@@ -46,31 +44,14 @@ class ModelQuestor extends BaseActor {
             
         } else {
           
-          topic match {
-            
-            case "loyalty" => {
-
-              val prediction = new LoyaltyIntent().predict(req)
+          val predictor = IntentFactory.getPredictor(topic)
+          val prediction = predictor.predict(req)
                 
-              val data = Map(Names.REQ_UID -> uid, Names.REQ_RESPONSE -> prediction)
-              new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
-              
-            }
-            
-            case "purchase" => {
-            
-              val prediction = new PurchaseIntent().predict(req)
-
-              val data = Map(Names.REQ_UID -> uid, Names.REQ_RESPONSE -> prediction)
-              new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
-              
-            }
-            
-            case _ => failure(null,Messages.REQUEST_IS_UNKNOWN())
-               
-          }
+          val data = Map(Names.REQ_UID -> uid, Names.REQ_RESPONSE -> prediction)
+          new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
           
         }
+
       } catch {
         case e:Exception => failure(req,e.getMessage)
         

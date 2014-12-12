@@ -1,4 +1,4 @@
-package de.kp.spark.intent
+package de.kp.spark.intent.model
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
  * 
  * This file is part of the Spark-Intent project
@@ -29,7 +29,7 @@ import de.kp.spark.intent.state.LoyaltyState
 
 import scala.collection.mutable.ArrayBuffer
 
-class LoyaltyIntent extends LoyaltyState {
+class LoyaltyIntent extends LoyaltyState with IntentPredictor {
   
   private val sink = new RedisSink()
   

@@ -20,30 +20,15 @@ package de.kp.spark.intent.actor
 
 import akka.actor.{Actor,ActorLogging,ActorRef,Props}
 
+import de.kp.spark.core.Names
+import de.kp.spark.core.actor.RootActor
+
 import de.kp.spark.core.model._
-import de.kp.spark.core.redis.RedisCache
 
 import de.kp.spark.intent.{Configuration,RemoteContext}
 import de.kp.spark.intent.model._
 
-abstract class BaseActor extends Actor with ActorLogging {
-
-  val (host,port) = Configuration.redis
-  val cache = new RedisCache(host,port.toInt)
-  
-  protected def failure(req:ServiceRequest,message:String):ServiceResponse = {
-    
-    if (req == null) {
-      val data = Map("message" -> message)
-      new ServiceResponse("","",data,IntentStatus.FAILURE)	
-      
-    } else {
-      val data = Map("uid" -> req.data("uid"), "message" -> message)
-      new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
-    
-    }
-    
-  }
+abstract class BaseActor extends RootActor(Configuration) {
 
   /**
    * Notify all registered listeners about a certain status
@@ -51,8 +36,7 @@ abstract class BaseActor extends Actor with ActorLogging {
   protected def notify(req:ServiceRequest,status:String) {
 
     /* Build message */
-    val data = Map("uid" -> req.data("uid"))
-    val response = new ServiceResponse(req.service,req.task,data,status)	
+    val response = new ServiceResponse(req.service,req.task,req.data,status)	
     
     /* Notify listeners */
     val message = Serializer.serializeResponse(response)    
@@ -62,20 +46,18 @@ abstract class BaseActor extends Actor with ActorLogging {
   
   protected def response(req:ServiceRequest,missing:Boolean):ServiceResponse = {
     
-    val uid = req.data("uid")
+    val uid = req.data(Names.REQ_UID)
     
     if (missing == true) {
-      val data = Map("uid" -> uid, "message" -> Messages.MISSING_INTENT(uid))
+      val data = Map(Names.REQ_UID -> uid, Names.REQ_MESSAGE -> Messages.MISSING_INTENT(uid))
       new ServiceResponse(req.service,req.task,data,IntentStatus.FAILURE)	
   
     } else {
-      val data = Map("uid" -> uid, "message" -> Messages.MODEL_BUILDING_STARTED(uid))
+      val data = Map(Names.REQ_UID -> uid, Names.REQ_MESSAGE -> Messages.MODEL_BUILDING_STARTED(uid))
       new ServiceResponse(req.service,req.task,data,IntentStatus.STARTED)	
   
     }
 
   }
-
-  protected def serialize(resp:ServiceResponse) = Serializer.serializeResponse(resp)
 
 }

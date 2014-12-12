@@ -158,45 +158,68 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
    * 
    */
   private def doFields[T](ctx:RequestContext) = doRequest(ctx,service,"fields")
-  
+   /**
+   * Request parameters for the 'register' request:
+   * 
+   * - site (String)
+   * - uid (String)
+   * - name (String)
+   * 
+   * - user (String)
+   * - timestamp (String) 
+   * - amount (Float)
+   * 
+   */    
   private def doRegister[T](ctx:RequestContext,subject:String) = {
-	    
-    subject match {	  
-      
-	  case "amount" => doRequest(ctx,service,"register:amount")
-	      
-	  case _ => {}
-	      
-	}
+	
+    val task = "register:" + subject
     
+    val topics = List("amount")
+    if (topics.contains(subject)) doRequest(ctx,service,task)
+     
   }  
   /**
    * 'index' & 'track' requests support data registration in an Elasticsearch
-   * index; while items are can be provided via the REST interface, rules are
-   * built by the Intent Recognition engine and then registered in the index.
+   * index. Request parameters for the 'index' request:
+   * 
+   * - site (String)
+   * - uid (String)
+   * - name (String)
+   * 
+   * - source (String)
+   * - type (String)
+   * 
    */
-
   private def doIndex[T](ctx:RequestContext,subject:String) = {
-	    
-    subject match {
-
-      case "amount" => doRequest(ctx,service,"index:amount")
-	      
-	  case _ => {}
-	  
-    }
+	
+    val task = "index:" + subject
+    
+    val topics = List("amount")
+    if (topics.contains(subject)) doRequest(ctx,service,task)
     
   }
-
+  /**
+   * Request parameters for the 'track' request:
+   * 
+   * - site (String)
+   * - uid (String)
+   * - name (String)
+   * 
+   * - source (String)
+   * - type (String)
+   * 
+   * - user (String)
+   * - timestamp (String) 
+   * - amount (Float)
+   * 
+   */   
   private def doTrack[T](ctx:RequestContext,subject:String) = {
-	    
-    subject match {
+	
+    val task = "track:" + subject
+    
+    val topics = List("amount")
+    if (topics.contains(subject)) doRequest(ctx,service,task)
 
-      case "amount" => doRequest(ctx,service,"track:amount")
-	      
-	  case _ => {}
-	  
-    }
   }
   /**
    * 'status' is an administration request to determine whether a 
@@ -225,21 +248,66 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
     if (topics.contains(subject)) doRequest(ctx,service,task)
   
   }
-  
+  /**
+   * Request parameters for the 'get' request:
+   * 
+   * - site (String)
+   * - uid (String)
+   * - name (String)
+   * 
+   * -purchases (String, specification of observed purchases)
+   * 
+   */    
   private def doGet[T](ctx:RequestContext,subject:String) = {
-	    
-    subject match {	      
-	  /* ../get/loyalty */
-	  case "loyalty" => doRequest(ctx,service,"get:loyalty")
-	  /* ../get/purchase */
-	  case "purchase" => doRequest(ctx,service,"get:purchase")
-	      
-	  case _ => {}
-	      
-	}
+	
+    val task = "get:" + subject
+    
+    val topics = List("loyalty","purchase")
+    if (topics.contains(subject)) doRequest(ctx,service,task)
     
   }  
-    
+  /**
+   * Request parameters for the 'train' request
+   * 
+   * - site (String)
+   * - uid (String)
+   * - name (String)
+   * 
+   * - algorithm (String, MARKOV, HIDDEN_MARKOV)
+   * - source (String, ELASTIC, FILE, JDBC, PIWIK)
+   * 
+   * - intent (String, LOYALTY, PURCHASE)
+   * 
+   * and the following parameters depend on the selected source:
+   * 
+   * ELASTIC:
+   * 
+   * - source.index (String)
+   * - source.type (String)
+   * - query (String)
+   * 
+   * JDBC:
+   * 
+   * - query (String)
+   * 
+   * and the following parameters depend on the selected sink:
+   * 
+   * ELASTIC:
+   * 
+   * - sink.index (String)
+   * - sink.type (String)
+   * 
+   * and the model building parameters have to be distinguished by the
+   * selected algorithm
+   * 
+   * MARKOV
+   * 
+   * HIDDEN_MARKOV
+   * 
+   * - epsilon (Double)
+   * - iterations (Int)
+   *  
+   */    
   private def doTrain[T](ctx:RequestContext) = doRequest(ctx,service,"train")
   
   private def doRequest[T](ctx:RequestContext,service:String,task:String) = {

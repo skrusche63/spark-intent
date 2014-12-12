@@ -1,4 +1,4 @@
-package de.kp.spark.intent
+package de.kp.spark.intent.model
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -22,14 +22,14 @@ import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
 import de.kp.spark.intent.markov.TransitionMatrix
-
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.sink.RedisSink
 
+import de.kp.spark.intent.sink.RedisSink
 import de.kp.spark.intent.state.PurchaseState
+
 import scala.collection.mutable.ArrayBuffer
 
-class PurchaseIntent extends PurchaseState {
+class PurchaseIntent extends PurchaseState with IntentPredictor {
   
   private val sink = new RedisSink()
   
