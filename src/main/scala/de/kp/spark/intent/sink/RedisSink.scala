@@ -20,43 +20,41 @@ package de.kp.spark.intent.sink
 
 import java.util.Date
 
+import de.kp.spark.core.Names
+
 import de.kp.spark.core.model._
 import de.kp.spark.core.redis.RedisClient
 
 import de.kp.spark.intent.Configuration
-import de.kp.spark.intent.model._
-
 import scala.collection.JavaConversions._
 
 class RedisSink {
 
   val (host,port) = Configuration.redis
   val client = RedisClient(host,port.toInt)
-
-  val service = "intent"
   
   def addModel(req:ServiceRequest,model:String) {
    
     val now = new Date()
     val timestamp = now.getTime()
     
-    val k = "model:" + service + ":" + req.data("uid")
+    val k = "model:" + req.data(Names.REQ_SITE) + ":" + req.data(Names.REQ_UID) + ":" + req.data(Names.REQ_NAME) 
     val v = "" + timestamp + ":" + model
     
     client.zadd(k,timestamp,v)
     
   }
   
-  def modelExists(uid:String):Boolean = {
+  def modelExists(req:ServiceRequest):Boolean = {
 
-    val k = "model:" + service + ":" + uid
+    val k = "model:" + req.data(Names.REQ_SITE) + ":" + req.data(Names.REQ_UID) + ":" + req.data(Names.REQ_NAME) 
     client.exists(k)
     
   }
   
-  def model(uid:String):String = {
+  def model(req:ServiceRequest):String = {
 
-    val k = "model:" + service + ":" + uid
+    val k = "model:" + req.data(Names.REQ_SITE) + ":" + req.data(Names.REQ_UID) + ":" + req.data(Names.REQ_NAME) 
     val models = client.zrange(k, 0, -1)
 
     if (models.size() == 0) {

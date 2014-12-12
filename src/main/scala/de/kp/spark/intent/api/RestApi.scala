@@ -145,10 +145,17 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
   }
 
   /**
-   * 'fields' and 'register' requests refer to the metadata management 
-   * of the Intent Recognition engine; for a certain task (uid) and a
-   * specific model (name), a specification of the respective data fields 
-   * can be registered and retrieved from a Redis database.
+   * 'fields' and 'register' requests refer to the metadata management; 
+   * for a certain task (uid) and a specific model (name), a specification 
+   * of the respective data fields can be registered and retrieved from a 
+   * Redis database.
+   * 
+   * Request parameters for the 'fields' request:
+   * 
+   * - site (String)
+   * - uid (String)
+   * - name (String)
+   * 
    */
   private def doFields[T](ctx:RequestContext) = doRequest(ctx,service,"fields")
   
@@ -192,27 +199,30 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
     }
   }
   /**
-   * 'status' is an administration request to determine whether a certain data
-   * mining task has been finished or not; the only parameter required for status 
-   * requests is the unique identifier of a certain task
+   * 'status' is an administration request to determine whether a 
+   * certain data mining task has been finished or not.
+   * 
+   * Request parameters for the 'status' request:
+   * 
+   * - site (String)
+   * - uid (String)
+   * 
    */
   private def doStatus[T](ctx:RequestContext,subject:String) = {
     
-    subject match {
-      /*
-       * Retrieve the 'latest' status information about a certain
-       * data mining or model building task.
-       */
-      case "latest" => doRequest(ctx,service,"status:latest")
-      /*
-       * Retrieve 'all' stati assigned to a certain data mining
-       * or model building task.
-       */
-      case "all" => doRequest(ctx,service,"status:all")
-      
-      case _ => {/* do nothing */}
-    
-    }
+    val task = "status:" + subject
+    /*
+     * The following topics are supported:
+     * 
+     * Retrieve the 'latest' status information about a certain
+     * data mining or model building task.
+     * 
+     * Retrieve 'all' stati assigned to a certain data mining
+     * or model building task.
+     *  
+     */
+    val topics = List("latest","all")
+    if (topics.contains(subject)) doRequest(ctx,service,task)
   
   }
   

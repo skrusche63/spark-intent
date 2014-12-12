@@ -18,6 +18,9 @@ package de.kp.spark.intent
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+import de.kp.spark.core.Names
+import de.kp.spark.core.model._
+
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
 
@@ -29,17 +32,17 @@ import scala.collection.mutable.ArrayBuffer
 class LoyaltyIntent extends LoyaltyState {
   
   private val sink = new RedisSink()
-  def predict(uid:String,data:Map[String,String]):String = {
+  
+  def predict(req:ServiceRequest):String = {
     
     val model = new HiddenMarkovModel()
 
-    val path = sink.model(uid)    
+    val path = sink.model(req)    
     model.load(path)
     
-    data.get("purchases") match {
+    req.data.get("purchases") match {
       
-      case None => throw new Exception(Messages.MISSING_PURCHASES(uid))
-      
+      case None => throw new Exception(Messages.MISSING_PURCHASES(req.data(Names.REQ_UID)))      
       case Some(value) => {
         
         val purchases = Serializer.deserializePurchases(value).items

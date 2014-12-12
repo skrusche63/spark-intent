@@ -18,6 +18,9 @@ package de.kp.spark.intent
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
+import de.kp.spark.core.Names
+import de.kp.spark.core.model._
+
 import de.kp.spark.intent.markov.TransitionMatrix
 
 import de.kp.spark.intent.model._
@@ -30,7 +33,7 @@ class PurchaseIntent extends PurchaseState {
   
   private val sink = new RedisSink()
   
-  def predict(uid:String,data:Map[String,String]):String = {
+  def predict(req:ServiceRequest):String = {
     
     val dim = FD_STATE_DEFS.length
 	val matrix = new TransitionMatrix(dim,dim)
@@ -38,12 +41,12 @@ class PurchaseIntent extends PurchaseState {
     matrix.setScale(FD_SCALE)
     matrix.setStates(FD_STATE_DEFS,FD_STATE_DEFS)
 
-    val model = sink.model(uid)
+    val model = sink.model(req)
     matrix.deserialize(model)
     
-    data.get("purchases") match {
+    req.data.get("purchases") match {
       
-      case None => throw new Exception(Messages.MISSING_PURCHASES(uid))
+      case None => throw new Exception(Messages.MISSING_PURCHASES(Names.REQ_UID))
       
       case Some(value) => {
         

@@ -18,6 +18,8 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+import de.kp.spark.core.Names
+
 import de.kp.spark.core.model._
 import de.kp.spark.intent.{LoyaltyIntent,PurchaseIntent}
 
@@ -34,59 +36,48 @@ class ModelQuestor extends BaseActor {
     case req:ServiceRequest => {
       
       val origin = sender    
-      val uid = req.data("uid")
+      val uid = req.data(Names.REQ_UID)
 
-      req.task match {
-
-        case "get:loyalty" => {
-
-          val resp = if (sink.modelExists(uid) == false) {           
-            failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
-            
-          } else {    
-
-             val prediction = new LoyaltyIntent().predict(uid,req.data)
-                
-             val data = Map("uid" -> uid, "loyalty" -> prediction)
-             new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
-          
-          }
-           
-          origin ! resp
-          context.stop(self)
-          
-        }
-    
-        case "get:purchase" => {
-
-          val resp = if (sink.modelExists(uid) == false) {           
-            failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
-            
-          } else {   
-            
-            val prediction = new PurchaseIntent().predict(uid,req.data)
-
-            val data = Map("uid" -> uid, "purchase" -> prediction)
-            new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
-          
-          }
-           
-          origin ! resp
-          context.stop(self)
-          
-        }
+      val Array(task,topic) = req.task.split(":")
+      val response = try {
         
-        case _ => {
-      
-          val origin = sender               
-          val msg = Messages.REQUEST_IS_UNKNOWN()          
+        if (sink.modelExists(req) == false) {           
+          failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
+            
+        } else {
           
-          origin ! failure(null,msg)
-          context.stop(self)
+          topic match {
+            
+            case "loyalty" => {
 
+              val prediction = new LoyaltyIntent().predict(req)
+                
+              val data = Map(Names.REQ_UID -> uid, Names.REQ_RESPONSE -> prediction)
+              new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
+              
+            }
+            
+            case "purchase" => {
+            
+              val prediction = new PurchaseIntent().predict(req)
+
+              val data = Map(Names.REQ_UID -> uid, Names.REQ_RESPONSE -> prediction)
+              new ServiceResponse(req.service,req.task,data,IntentStatus.SUCCESS)
+              
+            }
+            
+            case _ => failure(null,Messages.REQUEST_IS_UNKNOWN())
+               
+          }
+          
         }
+      } catch {
+        case e:Exception => failure(req,e.getMessage)
         
       }
+           
+      origin ! response
+      context.stop(self)
       
     }    
     
