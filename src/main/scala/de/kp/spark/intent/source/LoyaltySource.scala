@@ -22,7 +22,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import de.kp.spark.core.model._
-import de.kp.spark.core.source.{ElasticSource,FileSource,JdbcSource}
+import de.kp.spark.core.source._
 
 import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
@@ -50,7 +50,7 @@ class LoyaltySource(@transient sc:SparkContext) {
 
       case Sources.FILE => {
         
-        val rawset = new FileSource(sc).connect(config.file(0),req)
+        val rawset = new FileSource(sc).connect(config.input(0),req)
         model.buildFile(req,rawset)
         
       }
@@ -62,6 +62,16 @@ class LoyaltySource(@transient sc:SparkContext) {
         
         val rawset = new JdbcSource(sc).connect(config,req,fields)
         model.buildJDBC(req,rawset)
+        
+      }
+
+      case Sources.PARQUET => {
+    
+        val fieldspec = Fields.get(req,Intents.LOYALTY)
+        val fields = fieldspec.map(kv => kv._2._1).toList
+        
+        val rawset = new ParquetSource(sc).connect(config.input(0),req,fields)
+        model.buildParquet(req,rawset)
         
       }
 

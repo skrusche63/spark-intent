@@ -66,34 +66,31 @@ object Sources {
   val FILE:String    = "FILE"
   val ELASTIC:String = "ELASTIC" 
   val JDBC:String    = "JDBC"    
+  val PARQUET:String = "PARQUET"    
   val PIWIK:String   = "PIWIK"  
     
-  private val sources = List(FILE,ELASTIC,JDBC,PIWIK)
+  private val sources = List(FILE,ELASTIC,JDBC,PARQUET,PIWIK)
   def isSource(source:String):Boolean = sources.contains(source)
     
 }
 
 object Messages extends BaseMessages {
- 
-  def DATA_TO_TRACK_RECEIVED(uid:String):String = String.format("""Data to track received for uid '%s'.""", uid)
   
-  def MODEL_BUILDING_STARTED(uid:String):String = String.format("""Intent building started for uid '%s'.""", uid)
+  def MODEL_BUILDING_STARTED(uid:String):String = 
+    String.format("""[UID: %s] Intent building started.""", uid)
   
-  def MISSING_INTENT(uid:String):String = String.format("""Intent is missing for uid '%s'.""", uid)
+  def MISSING_INTENT(uid:String):String = 
+    String.format("""[UID: %s] Intent is missing.""", uid)
   
-  def MISSING_PARAMETERS(uid:String):String = String.format("""Parameters are missing for uid '%s'.""", uid)
+  def MISSING_PARAMETERS(uid:String):String = 
+    String.format("""[UID: %s] Parameters are missing.""", uid)
   
-  def MISSING_PURCHASES(uid:String):String = String.format("""Purchase is missing for uid '%s'.""", uid)
+  def MISSING_PURCHASES(uid:String):String = 
+    String.format("""[UID: %s] Purchase is missing.""", uid)
   
-  def MODEL_DOES_NOT_EXIST(uid:String):String = String.format("""Model does not exist for uid '%s'.""", uid)
+  def MODEL_DOES_NOT_EXIST(uid:String):String = 
+    String.format("""[UID: %s] Model does not exist.""", uid)
   
 }
 
-object IntentStatus extends BaseStatus {
-  
-  val DATASET:String = "dataset"
-    
-  val STARTED:String = "started"
-  val FINISHED:String = "finished"
-    
-}
+object IntentStatus extends BaseStatus

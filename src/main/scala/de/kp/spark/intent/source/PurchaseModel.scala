@@ -21,6 +21,8 @@ package de.kp.spark.intent.source
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+import de.kp.spark.core.Names
+
 import de.kp.spark.core.model._
 import de.kp.spark.intent.model._
 
@@ -36,11 +38,11 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
     val spec = sc.broadcast(Fields.get(req,Intents.PURCHASE))
     val purchases = rawset.map(data => {
       
-      val site = data(spec.value("site")._1)
-      val user = data(spec.value("user")._1)      
+      val site = data(spec.value(Names.SITE_FIELD)._1)
+      val user = data(spec.value(Names.USER_FIELD)._1)      
 
-      val timestamp = data(spec.value("timestamp")._1).toLong
-      val amount  = data(spec.value("amount")._1).toFloat
+      val timestamp = data(spec.value(Names.TIMESTAMP_FIELD)._1).toLong
+      val amount  = data(spec.value(Names.AMOUNT_FIELD)._1).toFloat
       
       new Purchase(site,user,timestamp,amount)
       
@@ -71,11 +73,33 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
     val spec = sc.broadcast(fieldspec)
     val purchases = rawset.map(data => {
       
-      val site = data(spec.value("site")._1).asInstanceOf[String]
-      val user = data(spec.value("user")._1).asInstanceOf[String] 
+      val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
+      val user = data(spec.value(Names.USER_FIELD)._1).asInstanceOf[String] 
 
-      val timestamp = data(spec.value("timestamp")._1).asInstanceOf[Long]
-      val amount  = data(spec.value("amount")._1).asInstanceOf[Float]
+      val timestamp = data(spec.value(Names.TIMESTAMP_FIELD)._1).asInstanceOf[Long]
+      val amount  = data(spec.value(Names.AMOUNT_FIELD)._1).asInstanceOf[Float]
+      
+      new Purchase(site,user,timestamp,amount)
+      
+    })
+   
+    behaviors(purchases)
+    
+  }
+ 
+  def buildParquet(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
+    
+    val fieldspec = Fields.get(req,Intents.PURCHASE)
+    val fields = fieldspec.map(kv => kv._2._1).toList
+  
+    val spec = sc.broadcast(fieldspec)
+    val purchases = rawset.map(data => {
+      
+      val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
+      val user = data(spec.value(Names.USER_FIELD)._1).asInstanceOf[String] 
+
+      val timestamp = data(spec.value(Names.TIMESTAMP_FIELD)._1).asInstanceOf[Long]
+      val amount  = data(spec.value(Names.AMOUNT_FIELD)._1).asInstanceOf[Float]
       
       new Purchase(site,user,timestamp,amount)
       

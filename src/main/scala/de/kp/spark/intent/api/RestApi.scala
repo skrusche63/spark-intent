@@ -116,6 +116,17 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
 	  }
     }  ~      
     /*
+     * A 'params' request supports the retrieval of the parameters
+     * used for a certain model training task
+     */
+    path("params") {  
+	  post {
+	    respondWithStatus(OK) {
+	      ctx => doParams(ctx)
+	    }
+	  }
+    }  ~ 
+    /*
      * A 'status' request supports the retrieval of the status
      * with respect to a certain training task (uid). The latest
      * status or all stati of a certain task are returned.
@@ -221,6 +232,15 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
     if (topics.contains(subject)) doRequest(ctx,service,task)
 
   }
+  /**
+   * Request parameters for the 'params' request:
+   * 
+   * - site (String)
+   * - uid (String)
+   * - name (String)
+   * 
+   */
+  private def doParams[T](ctx:RequestContext) = doRequest(ctx,service,"params")
   /**
    * 'status' is an administration request to determine whether a 
    * certain data mining task has been finished or not.

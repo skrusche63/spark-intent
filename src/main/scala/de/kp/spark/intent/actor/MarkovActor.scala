@@ -53,7 +53,7 @@ class MarkovActor(@transient val sc:SparkContext) extends BaseActor {
 
       if (missing == false) {
         /* Register status */
-        cache.addStatus(req,IntentStatus.STARTED)
+        cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
  
         try {
 
@@ -85,8 +85,6 @@ class MarkovActor(@transient val sc:SparkContext) extends BaseActor {
               
         val source = new PurchaseSource(sc)
         val dataset = source.get(req)
-
-        cache.addStatus(req,IntentStatus.DATASET)
         
         val scale = source.scaleDef
         val states = source.stateDefs
@@ -98,10 +96,10 @@ class MarkovActor(@transient val sc:SparkContext) extends BaseActor {
         sink.addModel(req,model.serialize)
           
         /* Update cache */
-        cache.addStatus(req,IntentStatus.FINISHED)
+        cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
 
         /* Notify potential listeners */
-        notify(req,IntentStatus.FINISHED)
+        notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
 
       }
       

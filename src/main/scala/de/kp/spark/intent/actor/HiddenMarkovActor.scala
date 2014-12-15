@@ -52,7 +52,7 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
 
       if (params != null) {
         /* Register status */
-        cache.addStatus(req,IntentStatus.STARTED)
+        cache.addStatus(req,IntentStatus.MODEL_TRAINING_STARTED)
  
         try {
 
@@ -85,8 +85,6 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
               
         val source = new LoyaltySource(sc)
         val dataset = source.get(req)
-
-        cache.addStatus(req,IntentStatus.DATASET)
         
         val states = source.stateDefs
         val hidden = source.hiddenDefs
@@ -103,10 +101,10 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
         sink.addModel(req,dir)
           
         /* Update cache */
-        cache.addStatus(req,IntentStatus.FINISHED)
+        cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
 
         /* Notify potential listeners */
-        notify(req,IntentStatus.FINISHED)
+        notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
         
       }
       

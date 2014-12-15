@@ -54,7 +54,7 @@ abstract class BaseActor extends RootActor(Configuration) {
   
     } else {
       val data = Map(Names.REQ_UID -> uid, Names.REQ_MESSAGE -> Messages.MODEL_BUILDING_STARTED(uid))
-      new ServiceResponse(req.service,req.task,data,IntentStatus.STARTED)	
+      new ServiceResponse(req.service,req.task,data,IntentStatus.MODEL_TRAINING_STARTED)	
   
     }
 
