@@ -21,32 +21,22 @@ package de.kp.spark.intent.actor
 import org.apache.spark.SparkContext
 
 import de.kp.spark.core.model._
-
-import de.kp.spark.intent.{Configuration}
 import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.MarkovBuilder
-import de.kp.spark.intent.source.{PurchaseSource}
+import de.kp.spark.intent.source.MarkovSource
 
-import scala.collection.JavaConversions._
-/*
- * The SparkContext is used to read data from different data source
- * and provide them as RDDs; building the markov model is independent
- * of Spark 
- */
-class MarkovActor(@transient val sc:SparkContext) extends BaseActor {
+class MarkovActor(@transient sc:SparkContext) extends BaseActor {
 
-  private def intents = Array(Intents.PURCHASE)
   private val sink = new RedisSink()
   
   def receive = {
     
     case req:ServiceRequest => {
 
-      val params = properties(req)
-      val missing = (params == null)
+      val missing = (properties(req) == false)
       
       /* Send response to originator of request */
       sender ! response(req, missing)
@@ -57,7 +47,7 @@ class MarkovActor(@transient val sc:SparkContext) extends BaseActor {
  
         try {
 
-          buildModel(req,req.data,params)
+          buildModel(req)
           
         } catch {
           case e:Exception => cache.addStatus(req,IntentStatus.FAILURE)          
@@ -77,51 +67,22 @@ class MarkovActor(@transient val sc:SparkContext) extends BaseActor {
     
   }
    
-  private def buildModel(req:ServiceRequest,data:Map[String,String],intent:String) {
+  private def buildModel(req:ServiceRequest) {
  
-    intent match {
-            
-      case Intents.PURCHASE => {
-              
-        val source = new PurchaseSource(sc)
-        val dataset = source.get(req)
-        
-        val scale = source.scaleDef
-        val states = source.stateDefs
-
-        val model = MarkovBuilder.build(scale,states,dataset)
-        model.normalize
+    val (scale,states,dataset) = new MarkovSource(sc).getAsBehavior(req)
+    val model = new MarkovBuilder(scale,states).build(dataset)
     
-        /* Put model to sink */
-        sink.addModel(req,model.serialize)
+    /* Put model to sink */
+    sink.addModel(req,model.serialize)
           
-        /* Update cache */
-        cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
+    /* Update cache */
+    cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
 
-        /* Notify potential listeners */
-        notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
-
-      }
-      
-      case _ => { /* do nothing */}
-      
-    }
+    /* Notify potential listeners */
+    notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
     
   }
   
-  private def properties(req:ServiceRequest):String = {
-      
-    try {
-      
-      val intent = req.data("intent")
-      return if (intents.contains(intent)) intent else null
-        
-    } catch {
-      case e:Exception => {
-         return null          
-      }
-    }
-    
-  }
+  private def properties(req:ServiceRequest):Boolean = req.data.contains("intent")
   
 }

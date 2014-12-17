@@ -197,7 +197,7 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
    * - uid (String)
    * - name (String)
    * 
-   * - source (String)
+   * - index (String)
    * - type (String)
    * 
    */
@@ -275,7 +275,7 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
    * - uid (String)
    * - name (String)
    * 
-   * -purchases (String, specification of observed purchases)
+   * - purchases (String, specification of observed purchases)
    * 
    */    
   private def doGet[T](ctx:RequestContext,subject:String) = {

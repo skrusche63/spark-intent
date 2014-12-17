@@ -25,7 +25,7 @@ import scala.collection.mutable.HashMap
 
 private case class Pair(ant:String,con:String)
 
-class MarkovBuilder(scaleDef:Int,stateDefs:Array[String]) extends Serializable {
+class MarkovBuilder(scale:Int,states:Array[String]) extends Serializable {
 
   def build(dataset:RDD[Behavior]):TransitionMatrix = {
    
@@ -58,12 +58,12 @@ class MarkovBuilder(scaleDef:Int,stateDefs:Array[String]) extends Serializable {
     val pairsupp = dataset.coalesce(1, false).aggregate(HashMap.empty[Pair,Int])(seqOp,combOp)    
 
     /* Setup transition matrix and add pair support*/  	
-    val dim = stateDefs.length
+    val dim = states.length
     
     val matrix = new TransitionMatrix(dim,dim)
-    matrix.setScale(scaleDef)
+    matrix.setScale(scale)
     
-    matrix.setStates(stateDefs, stateDefs)    
+    matrix.setStates(states, states)    
     for ((pair,support) <- pairsupp) {
       matrix.add(pair.ant, pair.con, support)
     }
@@ -75,15 +75,4 @@ class MarkovBuilder(scaleDef:Int,stateDefs:Array[String]) extends Serializable {
     
   }
   
-}
-
-object MarkovBuilder {
-  
-  def build(scaleDef:Int,stateDefs:Array[String],dataset:RDD[Behavior]):TransitionMatrix = {
-    
-    val builder = new MarkovBuilder(scaleDef,stateDefs)
-    builder.build(dataset)
-    
-  }
-
 }

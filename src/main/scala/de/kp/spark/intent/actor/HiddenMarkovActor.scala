@@ -20,43 +20,33 @@ package de.kp.spark.intent.actor
 
 import org.apache.spark.SparkContext
 
-import java.util.Date
-
+import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
 import de.kp.spark.intent.{Configuration}
-import de.kp.spark.intent.model._
+import de.kp.spark.intent.source.MarkovSource
 
+import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.HiddenMarkovTrainer
-import de.kp.spark.intent.source.LoyaltySource
 
-import scala.collection.JavaConversions._
-
-class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
+class HiddenMarkovActor(@transient sc:SparkContext) extends BaseActor {
 
   private val base = Configuration.markov  
-  private val intents = Array(Intents.LOYALTY)
-
   private val sink = new RedisSink()
   
   def receive = {
     
     case req:ServiceRequest => {
 
-      val params = properties(req)
+      val missing = (properties(req) == false)
+      sender ! response(req, missing)
 
-      /* Send response to originator of request */
-      sender ! response(req, (params == 0.0))
-
-      if (params != null) {
-        /* Register status */
-        cache.addStatus(req,IntentStatus.MODEL_TRAINING_STARTED)
+      if (missing == false) {
  
         try {
-
-            buildModel(req,req.data,params)
+            build(req)
           
         } catch {
           case e:Exception => cache.addStatus(req,IntentStatus.FAILURE)          
@@ -76,63 +66,46 @@ class HiddenMarkovActor(@transient val sc:SparkContext) extends BaseActor {
     
   }
    
-  private def buildModel(req:ServiceRequest,data:Map[String,String],params:(String,Int,Double)) {
- 
-    val (intent,iterations,epsilon) = params
-    intent match {
-            
-      case Intents.LOYALTY => {
-              
-        val source = new LoyaltySource(sc)
-        val dataset = source.get(req)
-        
-        val states = source.stateDefs
-        val hidden = source.hiddenDefs
+  private def build(req:ServiceRequest) {
+    /**
+     * The training request must provide a name for the random forest 
+     * to uniquely distinguish this forest from all others
+     */
+    val name = if (req.data.contains(Names.REQ_NAME)) req.data(Names.REQ_NAME) 
+      else throw new Exception("No name for hidden markov model provided.")
 
-        val model = HiddenMarkovTrainer.train(hidden,states,dataset,epsilon,iterations)
+    /* Register status */
+    cache.addStatus(req,IntentStatus.MODEL_TRAINING_STARTED)
 
-        val now = new Date()
-        val dir = base + "/hmm-" + now.getTime().toString
+    val epsilon = req.data("epsilon").toDouble
+    val iterations = req.data("iterations").toInt
     
-        /* Save model in directory of file system */
-        model.save(dir)
+    val (hstates,ostates,observations) = new MarkovSource(sc).getAsObservation(req)
+    val model = HiddenMarkovTrainer.train(hstates,ostates,observations,epsilon,iterations)
     
-        /* Put model to sink */
-        sink.addModel(req,dir)
+    val now = new java.util.Date()
+    val dir = String.format("""%s/model/%s/%s""",base,name,now.getTime().toString)
+    
+    /* Save model in directory of file system */
+    model.save(dir)
+    
+    /* Put model to sink */
+    sink.addModel(req,dir)
           
-        /* Update cache */
-        cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
+    /* Update cache */
+    cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
 
-        /* Notify potential listeners */
-        notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
-        
-      }
-      
-      case _ => { /* do nothing */}
-      
-    }
-  
+    /* Notify potential listeners */
+    notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
+ 
   }
   
-  private def properties(req:ServiceRequest):(String,Int,Double) = {
-      
-    try {
-      
-      val epsilon = req.data("epsilon").asInstanceOf[Double]
-      val iterations = req.data("iterations").asInstanceOf[Int]
-      
-      val intent = req.data("intent")
-      if (intents.contains(intent)) {
-        return (intent,iterations,epsilon)
-
-      } else 
-        return null
-        
-    } catch {
-      case e:Exception => {
-         return null          
-      }
-    }
+  private def properties(req:ServiceRequest):Boolean = {
+    
+    if (req.data.contains("epsilon") == false) return false
+    if (req.data.contains("iterations") == false) return false
+    
+    true
     
   }
   
