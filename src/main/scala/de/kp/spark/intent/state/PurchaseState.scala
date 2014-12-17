@@ -18,10 +18,10 @@ package de.kp.spark.intent.state
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import de.kp.spark.intent.markov.StateSpec
+import de.kp.spark.intent.markov.MarkovState
 import de.kp.spark.intent.spec.PurchaseModelSpec
 
-class PurchaseState extends StateSpec {
+class PurchaseState extends MarkovState {
   
   private val spec = PurchaseModelSpec.get
   /*
@@ -49,13 +49,8 @@ class PurchaseState extends StateSpec {
   protected val FD_SCALE = 1
   protected val FD_STATE_DEFS = Array("SL", "SE", "SG", "ML", "ME", "MG", "LL", "LE", "LG")
   
-  override def scaleDef = FD_SCALE
-  
-  override def stateDefs = FD_STATE_DEFS
-  
-  override def hiddenDefs:Array[String] = {
-    throw new Exception("Not implemented for Markov Models")
-  }
+  override def scale   = FD_SCALE  
+  override def ostates = FD_STATE_DEFS
   
   /**
    * Amount spent compared to previous transaction

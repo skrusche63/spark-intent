@@ -88,10 +88,9 @@ class LoyaltySource(@transient sc:SparkContext) {
     
   }
 
-  def scaleDef = model.scaleDef
+  def scale = model.scale
   
-  def stateDefs = model.stateDefs
-  
-  def hiddenDefs = model.hiddenDefs
+  def ostates = model.ostates 
+  def hstates = model.ostates
   
 }

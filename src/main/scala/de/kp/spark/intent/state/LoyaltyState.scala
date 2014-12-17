@@ -18,10 +18,10 @@ package de.kp.spark.intent.state
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import de.kp.spark.intent.markov.StateSpec
+import de.kp.spark.intent.markov.MarkovState
 import de.kp.spark.intent.spec.LoyaltyModelSpec
 
-class LoyaltyState extends StateSpec {
+class LoyaltyState extends MarkovState {
   
   private val spec = LoyaltyModelSpec.get
   /*
@@ -54,13 +54,13 @@ class LoyaltyState extends StateSpec {
    */
   protected val H_STATE_DEFS = Array("L","N","H")
   
-  override def scaleDef:Int = {
+  override def scale:Int = {
     throw new Exception("Not implemented for Hidden Markov Models")
   }
   
-  override def stateDefs = O_STATE_DEFS
+  override def ostates = O_STATE_DEFS
   
-  override def hiddenDefs = H_STATE_DEFS
+  override def hstates = H_STATE_DEFS
   
   /**
    * Amount spent compared to previous transaction

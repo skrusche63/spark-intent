@@ -43,8 +43,8 @@ class MarkovSource(@transient sc:SparkContext) {
         val source = new PurchaseSource(sc)
         val dataset = source.get(req)
         
-        val scale = source.scaleDef
-        val states = source.stateDefs
+        val scale  = source.scale
+        val states = source.ostates
       
         (scale,states,dataset)
         
@@ -67,8 +67,8 @@ class MarkovSource(@transient sc:SparkContext) {
         val source = new LoyaltySource(sc)
         val dataset = source.get(req)
         
-        val ostates = source.stateDefs
-        val hstates = source.hiddenDefs
+        val ostates = source.ostates
+        val hstates = source.hstates
 
         (hstates,ostates,dataset)
         

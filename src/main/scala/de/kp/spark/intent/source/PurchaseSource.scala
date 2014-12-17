@@ -88,8 +88,8 @@ class PurchaseSource(@transient sc:SparkContext) {
     
   }
 
-  def scaleDef = model.scaleDef
+  def scale = model.scale
   
-  def stateDefs = model.stateDefs
-  
+  def ostates = model.ostates
+
 }

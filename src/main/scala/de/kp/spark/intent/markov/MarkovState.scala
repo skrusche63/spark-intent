@@ -18,19 +18,20 @@ package de.kp.spark.intent.markov
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-abstract class StateSpec {
+abstract class MarkovState {
 
   /**
-   * Retrieve scaling factor for scaled markov models
+   * Retrieve scaling factor for scaled markov models; this
+   * parameters is not used by Hidden Markov models
    */
-  def scaleDef(): Int
+  def scale:Int = 0
   /**
-   * Retrieve (observable) states
+   * Retrieve observable states
    */
-  def stateDefs(): Array[String]
+  def ostates:Array[String] = Array.empty[String]
   /**
-   * Retrieve hidden states for midden markov model 
+   * Retrieve hidden states
    */
-  def hiddenDefs(): Array[String]
+  def hstates:Array[String] = Array.empty[String]
   
 }
