@@ -1,4 +1,4 @@
-package de.kp.spark.intent.state
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -18,10 +18,9 @@ package de.kp.spark.intent.state
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import de.kp.spark.intent.markov.MarkovState
-import de.kp.spark.intent.spec.LoyaltyModelSpec
+import de.kp.spark.intent.markov.MarkovBuilder
 
-class LoyaltyState extends MarkovState {
+class LoyaltyState extends MarkovBuilder {
   
   private val spec = LoyaltyModelSpec.get
   /*

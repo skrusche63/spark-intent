@@ -19,16 +19,32 @@ package de.kp.spark.intent.model
  */
 
 import de.kp.spark.core.model._
+import de.kp.spark.intent.sample._
 
-object IntentFactory {
+object PredictorFactory {
 
   def getPredictor(topic:String):IntentPredictor = {
          
     topic match {
-            
-      case "loyalty"  => new LoyaltyIntent()            
-      case "purchase" => new PurchaseIntent()
-            
+      /*
+       * 'loyality' and 'purchase' are use case specific
+       * topics that will be moved to the Predictiveworks
+       * client library
+       */
+      case "loyalty"  => new LoyaltyPredictor()            
+      case "purchase" => new PurchasePredictor()
+      /*
+       * The 'observation' topic supports requests to uncover a set
+       * of (hidden) states from a certain observation. Note, that
+       * this topic is restricted to Hidden Markov Models
+       * 
+       * The 'state' topic supports requests to determine a sequence
+       * of most probable Markovian state, that follow a certain state.
+       * 
+       * Note, that this topic is not applicable to Hidden Markov models
+       */
+      case "observation" | "state" => new MarkovPredictor(topic)
+      
       case _ => throw new Exception("Unknown topic.")
     
     }

@@ -27,6 +27,8 @@ import de.kp.spark.core.model._
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.source._
 
+import de.kp.spark.intent.sample._
+
 class MarkovSource(@transient sc:SparkContext) {
 
   /*
@@ -45,6 +47,22 @@ class MarkovSource(@transient sc:SparkContext) {
         
         val scale  = source.scale
         val states = source.ostates
+      
+        (scale,states,dataset)
+        
+      }
+      /*
+       * A 'state' intent retrieves the user behavior from a state specification; 
+       * no additional transformation is required. This supports more generic training
+       * requests, where the application logic is outside the Intent Recognition engine
+       */
+      case Intents.STATE => {
+
+        val source = new StateSource(sc)
+        val dataset = source.getAsBehavior(req)
+        
+        val scale = req.data(Names.REQ_SCALE).toInt
+        val states = req.data(Names.REQ_STATES).split(",")
       
         (scale,states,dataset)
         
@@ -73,7 +91,22 @@ class MarkovSource(@transient sc:SparkContext) {
         (hstates,ostates,dataset)
         
       }
-       
+      /*
+       * A 'state' intent retrieves the user behavior from a state specification; 
+       * no additional transformation is required. This supports more generic training
+       * requests, where the application logic is outside the Intent Recognition engine
+       */
+      case Intents.STATE => {
+
+        val source = new StateSource(sc)
+        val dataset = source.getAsObservation(req)
+        
+        val hstates = req.data(Names.REQ_HSTATES).split(",")
+        val ostates = req.data(Names.REQ_OSTATES).split(",")
+
+        (hstates,ostates,dataset)
+        
+      }
       case _ => throw new Exception("Unknown intent.")
     
       

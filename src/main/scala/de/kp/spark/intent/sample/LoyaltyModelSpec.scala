@@ -1,4 +1,4 @@
-package de.kp.spark.intent.spec
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -21,9 +21,9 @@ package de.kp.spark.intent.spec
 import scala.xml._
 import scala.collection.mutable.HashMap
 
-object PurchaseModelSpec {
+object LoyaltyModelSpec {
   
-  val path = "purchase.xml"
+  val path = "loyalty.xml"
   val root:Elem = XML.load(getClass.getClassLoader.getResource(path))  
 
   private val data = HashMap.empty[String,String]

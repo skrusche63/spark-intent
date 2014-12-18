@@ -1,4 +1,4 @@
-package de.kp.spark.intent.model
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -21,28 +21,22 @@ package de.kp.spark.intent.model
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
-import de.kp.spark.intent.markov.TransitionMatrix
+import de.kp.spark.intent.markov._
 import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.sink.RedisSink
-import de.kp.spark.intent.state.PurchaseState
 
 import scala.collection.mutable.ArrayBuffer
+import de.kp.spark.intent.model.IntentPredictor
 
-class PurchaseIntent extends PurchaseState with IntentPredictor {
+class PurchasePredictor extends PurchaseState with IntentPredictor {
   
   private val sink = new RedisSink()
   
   def predict(req:ServiceRequest):String = {
     
-    val dim = FD_STATE_DEFS.length
-	val matrix = new TransitionMatrix(dim,dim)
-      
-    matrix.setScale(FD_SCALE)
-    matrix.setStates(FD_STATE_DEFS,FD_STATE_DEFS)
-
     val model = sink.model(req)
-    matrix.deserialize(model)
+    val (scale,states,matrix) = new MarkovSerializer().deserialize(model)
     
     req.data.get("purchases") match {
       
@@ -87,14 +81,14 @@ class PurchaseIntent extends PurchaseState with IntentPredictor {
       
           val last_state = states.last
 
-          /* Compute index of last state from STATE_DEFS */
-          val row = FD_STATE_DEFS.indexOf(last_state)
+          /* Compute index of last state from state definition */
+          val row = states.indexOf(last_state)
           /* Determine most probable next state from model */
           val probs = matrix.getRow(row)
           val maxProb = probs.max
     
           val col = probs.indexOf(maxProb)
-          val next_state = FD_STATE_DEFS(col)
+          val next_state = states(col)
 
           val (next_time,next_amount) = (nextDate(next_state,last_time),nextAmount(next_state,last_amount))
           new Purchase(site,user,next_time,next_amount)

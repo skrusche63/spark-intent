@@ -44,7 +44,7 @@ class ModelQuestor extends BaseActor {
             
         } else {
           
-          val predictor = IntentFactory.getPredictor(topic)
+          val predictor = PredictorFactory.getPredictor(topic)
           val prediction = predictor.predict(req)
                 
           val data = Map(Names.REQ_UID -> uid, Names.REQ_RESPONSE -> prediction)

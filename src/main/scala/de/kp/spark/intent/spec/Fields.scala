@@ -27,19 +27,16 @@ import de.kp.spark.intent.model._
 import scala.xml._
 import scala.collection.mutable.HashMap
 
-object Fields {
-
-  val loyalty_xml:String  = "loyalty_fields.xml"
-  val purchase_xml:String = "purchase_fields.xml"
-
+class Fields {
+    
   val (host,port) = Configuration.redis
   val cache = new RedisCache(host,port.toInt)
   
-  def get(req:ServiceRequest,intent:String):Map[String,(String,String)] = {
-    
-    val fields = HashMap.empty[String,(String,String)]
+  def get(req:ServiceRequest):Map[String,(String,String)] = {
 
     try {
+    
+      val fields = HashMap.empty[String,(String,String)]
           
       if (cache.fieldsExist(req)) {      
         
@@ -54,44 +51,19 @@ object Fields {
           
         }
     
+        fields.toMap
+        
       } else {
-        /*
-         * In case of no dynamic metadata provided, the field specification
-         * is retrieved from pre-defined xml files
-         */
-        val root = intent match {
-        
-          case Intents.LOYALTY => {
-            XML.load(getClass.getClassLoader.getResource(loyalty_xml))           
-          }
-        
-          case Intents.PURCHASE => {
-            XML.load(getClass.getClassLoader.getResource(purchase_xml))  
-          }
-        
-          case _ => null
-        
-        }
-        
-        if (root == null) throw new Exception("Intent is unknown.")
-      
-        for (field <- root \ "field") {
-      
-          val _name  = (field \ "@name").toString
-          val _type  = (field \ "@type").toString
-
-          val _mapping = field.text
-          fields += _name -> (_mapping,_type) 
-      
-        }
+        fromXML
         
       }
       
     } catch {
-      case e:Exception => {}
+      case e:Exception => Map.empty[String,(String,String)]
     }
     
-    fields.toMap
   }
-    
+  
+  def fromXML:Map[String,(String,String)] = null
+  
 }

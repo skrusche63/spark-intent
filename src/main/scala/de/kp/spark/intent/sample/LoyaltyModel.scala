@@ -1,4 +1,4 @@
-package de.kp.spark.intent.source
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -22,20 +22,16 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import de.kp.spark.core.Names
-
 import de.kp.spark.core.model._
+
 import de.kp.spark.intent.model._
-
-import de.kp.spark.intent.state.PurchaseState
-import de.kp.spark.intent.spec.Fields
-
 import scala.collection.mutable.ArrayBuffer
 
-class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Serializable {
- 
-  def buildElastic(req:ServiceRequest,rawset:RDD[Map[String,String]]):RDD[Behavior] = {
-    
-    val spec = sc.broadcast(Fields.get(req,Intents.PURCHASE))
+class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Serializable {
+  
+  def buildElastic(req:ServiceRequest,rawset:RDD[Map[String,String]]):Array[String] = {
+
+    val spec = sc.broadcast(new LoyaltyFields().get(req))
     val purchases = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1)
@@ -47,12 +43,12 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
       new Purchase(site,user,timestamp,amount)
       
     })
-   
-    behaviors(purchases)
+    
+    observations(purchases)
     
   }
 
-  def buildFile(req:ServiceRequest,rawset:RDD[String]):RDD[Behavior] = {
+  def buildFile(req:ServiceRequest,rawset:RDD[String]):Array[String] = {
     
     val purchases = rawset.map {line =>
       
@@ -60,17 +56,14 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
       new Purchase(site,user,timestamp.toLong,amount.toFloat)
 
     }
-   
-    behaviors(purchases)
+    
+    observations(purchases)
     
   }
- 
-  def buildJDBC(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
-    
-    val fieldspec = Fields.get(req,Intents.PURCHASE)
-    val fields = fieldspec.map(kv => kv._2._1).toList
   
-    val spec = sc.broadcast(fieldspec)
+  def buildJDBC(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
+    
+    val spec = sc.broadcast(new LoyaltyFields().get(req))
     val purchases = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
@@ -82,17 +75,14 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
       new Purchase(site,user,timestamp,amount)
       
     })
-   
-    behaviors(purchases)
+    
+    observations(purchases)
     
   }
- 
-  def buildParquet(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
+   
+  def buildParquet(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
     
-    val fieldspec = Fields.get(req,Intents.PURCHASE)
-    val fields = fieldspec.map(kv => kv._2._1).toList
-  
-    val spec = sc.broadcast(fieldspec)
+    val spec = sc.broadcast(new LoyaltyFields().get(req))
     val purchases = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
@@ -104,12 +94,12 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
       new Purchase(site,user,timestamp,amount)
       
     })
-   
-    behaviors(purchases)
+    
+    observations(purchases)
     
   }
  
-  def buildPiwik(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
+  def buildPiwik(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
     
     val purchases = rawset.map(row => {
       
@@ -127,31 +117,54 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
       new Purchase(site.toString,user,timestamp,amount)
       
     })
-   
-    behaviors(purchases)
+    
+    observations(purchases)
     
   }
-
+  
   /**
    * Represent transactions as a time ordered sequence of Markov States;
-   * the result is directly used to build the respective Markov Model
+   * the result is directly used to build the respective Hidden Markov Model
    */
-  def behaviors(sequences:RDD[Purchase]):RDD[Behavior] = {
+  def observations(purchases:RDD[Purchase]):Array[String] = {
     
     /*
-     * Group purchases by site & user and restrict to those
-     * users with more than one purchase
+     * Sort sequences of all purchases first by ascending (true)
+     * timestamps to represent them as observations; to this end,
+     * no knowledge about the respective site and user is relevant
      */
-    sequences.groupBy(p => (p.site,p.user)).filter(_._2.size > 1).map(p => {
+    val dataset = purchases.coalesce(1, false).sortBy(p => p.timestamp, true, 1)
 
-      val (site,user) = p._1
-      val orders      = p._2.map(v => (v.timestamp,v.amount)).toList.sortBy(_._1)
+    def seqOp(observations:Observations,purchase:Purchase):Observations = {
+
+      observations.add(purchase)
+      observations
       
-      /* Extract first order */
-      var (pre_time,pre_amount) = orders.head
-      val states = ArrayBuffer.empty[String]
+    }
+    /*
+     * Note that observ1 is always NULL
+     */
+    def combOp(observ1:Observations,observ2:Observations):Observations = observ2      
 
-      for ((time,amount) <- orders.tail) {
+    dataset.aggregate(new Observations())(seqOp,combOp).states.toArray    
+  
+  }
+  
+  private class Observations() {
+    
+    val states = ArrayBuffer.empty[String]
+    
+    var pre_purchase:Purchase = null
+    
+    def add(purchase:Purchase) {
+      
+      if (pre_purchase == null) {
+        pre_purchase = purchase
+      
+      } else {
+        
+        val (pre_time,pre_amount) = (pre_purchase.timestamp,pre_purchase.amount)        
+        val (time,amount) = (purchase.timestamp,purchase.amount)
         
         /* Determine state from amount */
         val astate = stateByAmount(amount,pre_amount)
@@ -163,15 +176,11 @@ class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Seria
       
         val state = astate + tstate
         states += state
-        
-        pre_amount = amount
-        pre_time   = time
-        
+
+        pre_purchase = purchase
+       
       }
       
-      new Behavior(site,user,states.toList)
-      
-    })
-    
+    }
   }
 }

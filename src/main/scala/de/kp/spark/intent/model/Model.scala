@@ -24,20 +24,11 @@ import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read,write}
 
 import de.kp.spark.core.model._
-/*
- * This class specifies a list of user states that are used to represent
- * the customers (purchase) behavior within a certain period of time 
- */
-case class Behavior(site:String,user:String,states:List[String])
-case class Behaviors(items:List[Behavior])
 
 case class Purchase(site:String,user:String,timestamp:Long,amount:Float)
 case class Purchases(items:List[Purchase])
 
 object Serializer extends BaseSerializer {
-
-  def serializeBehaviors(behaviors:Behaviors):String = write(behaviors)
-  def deserializeBehavior(behaviors:String):Behaviors = read[Behaviors](behaviors)
   
   def serializePurchases(purchases:Purchases):String = write(purchases)
   def deserializePurchases(purchases:String):Purchases = read[Purchases](purchases)
@@ -58,6 +49,11 @@ object Intents {
   
   val LOYALTY:String  = "LOYALTY"
   val PURCHASE:String = "PURCHASE"
+  /*
+   * This is an internally used intent to indicate that
+   * direct state oriented processing is required
+   */
+  val STATE:String = "STATE"
     
 }
 

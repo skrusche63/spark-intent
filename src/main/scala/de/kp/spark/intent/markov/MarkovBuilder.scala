@@ -18,61 +18,20 @@ package de.kp.spark.intent.markov
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import org.apache.spark.rdd.RDD
-import de.kp.spark.intent.model._
+abstract class MarkovBuilder {
 
-import scala.collection.mutable.HashMap
-
-private case class Pair(ant:String,con:String)
-
-class MarkovBuilder(scale:Int,states:Array[String]) extends Serializable {
-
-  def build(dataset:RDD[Behavior]):TransitionMatrix = {
-   
-    def seqOp(support:HashMap[Pair,Int],seq:Behavior):HashMap[Pair,Int] = {
-          
-      val (site,user,states) = (seq.site,seq.user,seq.states)
-      /*
-       *  The pair support aggregates over all sites and users provided,
-       *  i.e. this is no personalized transition probability matrix
-       */  
-      for (i <- 1 until states.size) {
-        
-        val pair = new Pair(states(i-1),states(i))
-
-        support.get(pair) match {          
-          case None => support += pair -> 1
-          case Some(count) => support += pair -> (count + 1)
-        }
-
-      }
-      
-      support
-      
-    }
-    
-    /* Note that supp1 is always NULL */
-    def combOp(supp1:HashMap[Pair,Int],supp2:HashMap[Pair,Int]):HashMap[Pair,Int] = supp2      
-
-    /* Build pair support */
-    val pairsupp = dataset.coalesce(1, false).aggregate(HashMap.empty[Pair,Int])(seqOp,combOp)    
-
-    /* Setup transition matrix and add pair support*/  	
-    val dim = states.length
-    
-    val matrix = new TransitionMatrix(dim,dim)
-    matrix.setScale(scale)
-    
-    matrix.setStates(states, states)    
-    for ((pair,support) <- pairsupp) {
-      matrix.add(pair.ant, pair.con, support)
-    }
-            
-    /* Normalize the matrix content and transform support into probabilities */
-	matrix.normalize()
-
-    matrix
-    
-  }
+  /**
+   * Retrieve scaling factor for scaled markov models; this
+   * parameters is not used by Hidden Markov models
+   */
+  def scale:Int = 0
+  /**
+   * Retrieve observable states
+   */
+  def ostates:Array[String] = Array.empty[String]
+  /**
+   * Retrieve hidden states
+   */
+  def hstates:Array[String] = Array.empty[String]
   
 }

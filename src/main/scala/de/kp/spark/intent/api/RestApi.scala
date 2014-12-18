@@ -275,14 +275,35 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkCon
    * - uid (String)
    * - name (String)
    * 
+   * and the following parameters depend on the selected topic:
+   * 
+   * topic: loyalty, purchase
+   * 
    * - purchases (String, specification of observed purchases)
+   * 
+   * topic: observation
+   * 
+   * This topic supports the retrieval of a sequence of states
+   * from a sequence of observations
+   * 
+   * - observations (String, comma-separated list of Strings)
+   * 
+   * topic: state
+   * 
+   * This topic supports the retrieval of a sequence of subsequent
+   * states that follow a certain 'state'; the request requires the
+   * number of 'steps' to look ahead and the name of the reference
+   * state
+   * 
+   * - steps (Int)
+   * - state (String)
    * 
    */    
   private def doGet[T](ctx:RequestContext,subject:String) = {
 	
     val task = "get:" + subject
     
-    val topics = List("loyalty","purchase")
+    val topics = List("loyalty","purchase","observation","state")
     if (topics.contains(subject)) doRequest(ctx,service,task)
     
   }  

@@ -1,4 +1,4 @@
-package de.kp.spark.intent.model
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
  * 
  * This file is part of the Spark-Intent project
@@ -25,11 +25,11 @@ import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.HiddenMarkovModel
-import de.kp.spark.intent.state.LoyaltyState
+import de.kp.spark.intent.model.IntentPredictor
 
 import scala.collection.mutable.ArrayBuffer
 
-class LoyaltyIntent extends LoyaltyState with IntentPredictor {
+class LoyaltyPredictor extends LoyaltyState with IntentPredictor {
   
   private val sink = new RedisSink()
   

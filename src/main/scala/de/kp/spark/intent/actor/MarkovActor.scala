@@ -25,8 +25,8 @@ import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.sink.RedisSink
 
-import de.kp.spark.intent.markov.MarkovBuilder
-import de.kp.spark.intent.source.MarkovSource
+import de.kp.spark.intent.markov._
+import de.kp.spark.intent.source._
 
 class MarkovActor(@transient sc:SparkContext) extends BaseActor {
 
@@ -70,10 +70,11 @@ class MarkovActor(@transient sc:SparkContext) extends BaseActor {
   private def buildModel(req:ServiceRequest) {
  
     val (scale,states,dataset) = new MarkovSource(sc).getAsBehavior(req)
-    val model = new MarkovBuilder(scale,states).build(dataset)
+    val matrix = new MarkovTrainer(scale,states).build(dataset)
     
     /* Put model to sink */
-    sink.addModel(req,model.serialize)
+    val model = new MarkovSerializer().serialize(scale,states,matrix)
+    sink.addModel(req,model)
           
     /* Update cache */
     cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)

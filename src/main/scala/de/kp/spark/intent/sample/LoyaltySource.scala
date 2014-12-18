@@ -1,4 +1,4 @@
-package de.kp.spark.intent.source
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -19,7 +19,6 @@ package de.kp.spark.intent.source
 */
 
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 
 import de.kp.spark.core.model._
 import de.kp.spark.core.source._
@@ -27,7 +26,7 @@ import de.kp.spark.core.source._
 import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
 
-import de.kp.spark.intent.spec.Fields
+import de.kp.spark.intent.source.PiwikSource
 
 class LoyaltySource(@transient sc:SparkContext) {
 
@@ -57,7 +56,7 @@ class LoyaltySource(@transient sc:SparkContext) {
 
       case Sources.JDBC => {
     
-        val fieldspec = Fields.get(req,Intents.LOYALTY)
+        val fieldspec = new LoyaltyFields().get(req)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
         val rawset = new JdbcSource(sc).connect(config,req,fields)
@@ -67,7 +66,7 @@ class LoyaltySource(@transient sc:SparkContext) {
 
       case Sources.PARQUET => {
     
-        val fieldspec = Fields.get(req,Intents.LOYALTY)
+        val fieldspec =  new LoyaltyFields().get(req)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
         val rawset = new ParquetSource(sc).connect(config.input(0),req,fields)

@@ -1,4 +1,4 @@
-package de.kp.spark.intent.source
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -26,17 +26,13 @@ import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 import de.kp.spark.intent.model._
 
-import de.kp.spark.intent.state.LoyaltyState
-import de.kp.spark.intent.spec.Fields
-
 import scala.collection.mutable.ArrayBuffer
 
-class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Serializable {
-  
-  def buildElastic(req:ServiceRequest,rawset:RDD[Map[String,String]]):Array[String] = {
-
-    val spec = sc.broadcast(Fields.get(req,Intents.LOYALTY))
-
+class PurchaseModel(@transient sc:SparkContext) extends PurchaseState with Serializable {
+ 
+  def buildElastic(req:ServiceRequest,rawset:RDD[Map[String,String]]):RDD[Behavior] = {
+    
+    val spec = sc.broadcast(new PurchaseFields().get(req))
     val purchases = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1)
@@ -48,12 +44,12 @@ class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Seriali
       new Purchase(site,user,timestamp,amount)
       
     })
-    
-    observations(purchases)
+   
+    behaviors(purchases)
     
   }
 
-  def buildFile(req:ServiceRequest,rawset:RDD[String]):Array[String] = {
+  def buildFile(req:ServiceRequest,rawset:RDD[String]):RDD[Behavior] = {
     
     val purchases = rawset.map {line =>
       
@@ -61,56 +57,50 @@ class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Seriali
       new Purchase(site,user,timestamp.toLong,amount.toFloat)
 
     }
-    
-    observations(purchases)
-    
-  }
-  
-  def buildJDBC(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
-    
-    val fieldspec = Fields.get(req,Intents.LOYALTY)
-    val fields = fieldspec.map(kv => kv._2._1).toList
-
-    val spec = sc.broadcast(fieldspec)
-    val purchases = rawset.map(data => {
-      
-      val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
-      val user = data(spec.value(Names.USER_FIELD)._1).asInstanceOf[String] 
-
-      val timestamp = data(spec.value(Names.TIMESTAMP_FIELD)._1).asInstanceOf[Long]
-      val amount  = data(spec.value(Names.AMOUNT_FIELD)._1).asInstanceOf[Float]
-      
-      new Purchase(site,user,timestamp,amount)
-      
-    })
-    
-    observations(purchases)
-    
-  }
    
-  def buildParquet(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
-    
-    val fieldspec = Fields.get(req,Intents.LOYALTY)
-    val fields = fieldspec.map(kv => kv._2._1).toList
-
-    val spec = sc.broadcast(fieldspec)
-    val purchases = rawset.map(data => {
-      
-      val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
-      val user = data(spec.value(Names.USER_FIELD)._1).asInstanceOf[String] 
-
-      val timestamp = data(spec.value(Names.TIMESTAMP_FIELD)._1).asInstanceOf[Long]
-      val amount  = data(spec.value(Names.AMOUNT_FIELD)._1).asInstanceOf[Float]
-      
-      new Purchase(site,user,timestamp,amount)
-      
-    })
-    
-    observations(purchases)
+    behaviors(purchases)
     
   }
  
-  def buildPiwik(req:ServiceRequest,rawset:RDD[Map[String,Any]]):Array[String] = {
+  def buildJDBC(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
+    
+    val spec = sc.broadcast(new PurchaseFields().get(req))
+    val purchases = rawset.map(data => {
+      
+      val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
+      val user = data(spec.value(Names.USER_FIELD)._1).asInstanceOf[String] 
+
+      val timestamp = data(spec.value(Names.TIMESTAMP_FIELD)._1).asInstanceOf[Long]
+      val amount  = data(spec.value(Names.AMOUNT_FIELD)._1).asInstanceOf[Float]
+      
+      new Purchase(site,user,timestamp,amount)
+      
+    })
+   
+    behaviors(purchases)
+    
+  }
+ 
+  def buildParquet(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
+    
+    val spec = sc.broadcast(new PurchaseFields().get(req))
+    val purchases = rawset.map(data => {
+      
+      val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
+      val user = data(spec.value(Names.USER_FIELD)._1).asInstanceOf[String] 
+
+      val timestamp = data(spec.value(Names.TIMESTAMP_FIELD)._1).asInstanceOf[Long]
+      val amount  = data(spec.value(Names.AMOUNT_FIELD)._1).asInstanceOf[Float]
+      
+      new Purchase(site,user,timestamp,amount)
+      
+    })
+   
+    behaviors(purchases)
+    
+  }
+ 
+  def buildPiwik(req:ServiceRequest,rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
     
     val purchases = rawset.map(row => {
       
@@ -128,54 +118,31 @@ class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Seriali
       new Purchase(site.toString,user,timestamp,amount)
       
     })
-    
-    observations(purchases)
+   
+    behaviors(purchases)
     
   }
-  
+
   /**
    * Represent transactions as a time ordered sequence of Markov States;
-   * the result is directly used to build the respective Hidden Markov Model
+   * the result is directly used to build the respective Markov Model
    */
-  def observations(purchases:RDD[Purchase]):Array[String] = {
+  def behaviors(sequences:RDD[Purchase]):RDD[Behavior] = {
     
     /*
-     * Sort sequences of all purchases first by ascending (true)
-     * timestamps to represent them as observations; to this end,
-     * no knowledge about the respective site and user is relevant
+     * Group purchases by site & user and restrict to those
+     * users with more than one purchase
      */
-    val dataset = purchases.coalesce(1, false).sortBy(p => p.timestamp, true, 1)
+    sequences.groupBy(p => (p.site,p.user)).filter(_._2.size > 1).map(p => {
 
-    def seqOp(observations:Observations,purchase:Purchase):Observations = {
+      val (site,user) = p._1
+      val orders      = p._2.map(v => (v.timestamp,v.amount)).toList.sortBy(_._1)
+      
+      /* Extract first order */
+      var (pre_time,pre_amount) = orders.head
+      val states = ArrayBuffer.empty[String]
 
-      observations.add(purchase)
-      observations
-      
-    }
-    /*
-     * Note that observ1 is always NULL
-     */
-    def combOp(observ1:Observations,observ2:Observations):Observations = observ2      
-
-    dataset.aggregate(new Observations())(seqOp,combOp).states.toArray    
-  
-  }
-  
-  private class Observations() {
-    
-    val states = ArrayBuffer.empty[String]
-    
-    var pre_purchase:Purchase = null
-    
-    def add(purchase:Purchase) {
-      
-      if (pre_purchase == null) {
-        pre_purchase = purchase
-      
-      } else {
-        
-        val (pre_time,pre_amount) = (pre_purchase.timestamp,pre_purchase.amount)        
-        val (time,amount) = (purchase.timestamp,purchase.amount)
+      for ((time,amount) <- orders.tail) {
         
         /* Determine state from amount */
         val astate = stateByAmount(amount,pre_amount)
@@ -187,11 +154,15 @@ class LoyaltyModel(@transient sc:SparkContext) extends LoyaltyState with Seriali
       
         val state = astate + tstate
         states += state
-
-        pre_purchase = purchase
-       
+        
+        pre_amount = amount
+        pre_time   = time
+        
       }
       
-    }
+      new Behavior(site,user,states.toList)
+      
+    })
+    
   }
 }

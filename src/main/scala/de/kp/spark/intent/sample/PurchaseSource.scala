@@ -1,4 +1,4 @@
-package de.kp.spark.intent.source
+package de.kp.spark.intent.sample
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
 * 
 * This file is part of the Spark-Intent project
@@ -25,9 +25,9 @@ import de.kp.spark.core.model._
 import de.kp.spark.core.source._
 
 import de.kp.spark.intent.Configuration
-import de.kp.spark.intent.spec.Fields
 
 import de.kp.spark.intent.model._
+import de.kp.spark.intent.source._
 
 class PurchaseSource(@transient sc:SparkContext) {
 
@@ -57,7 +57,7 @@ class PurchaseSource(@transient sc:SparkContext) {
 
       case Sources.JDBC => {
     
-        val fieldspec = Fields.get(req,Intents.PURCHASE)
+        val fieldspec = new PurchaseFields().get(req)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
         val rawset = new JdbcSource(sc).connect(config,req,fields)
@@ -67,7 +67,7 @@ class PurchaseSource(@transient sc:SparkContext) {
 
       case Sources.PARQUET => {
     
-        val fieldspec = Fields.get(req,Intents.PURCHASE)
+        val fieldspec = new PurchaseFields().get(req)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
         val rawset = new ParquetSource(sc).connect(config.input(0),req,fields)
