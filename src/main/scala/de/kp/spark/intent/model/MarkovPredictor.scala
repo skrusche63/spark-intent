@@ -27,13 +27,33 @@ class MarkovPredictor(topic:String) extends IntentPredictor {
         val model = new HiddenMarkovModel()
         model.load(path)
         /*
-         * Retrieve a sequence of (hidden) states from the 
-         * provided observations
+         * The Hidden Markov Predictor is flexible with respect to the
+         * provided combination of request parameters
          */
-        val observations = req.data(Names.REQ_OBSERVATIONS).split(",")
-        val states = model.predict(observations)
+        if (req.data.contains(Names.REQ_OBSERVATION)) {
+          /*
+           * Retrieve a sequence of (hidden) states from the 
+           * provided observation
+           */
+          val observation = req.data(Names.REQ_OBSERVATION).split(",")
+          val states = model.predict(observation)
         
-        states.mkString(",")
+          states.mkString(",")
+          
+        } else if (req.data.contains(Names.REQ_OBSERVATIONS)) {
+          /*
+           * Retrieve a list of sequences of (hidden) states
+           * from the provided observations
+           */
+          val observations = req.data(Names.REQ_OBSERVATION).split(";").map(x => x.split(","))
+          val states = observations.map(model.predict(_))
+          
+          states.map(x => x.mkString(",")).mkString(";")
+          
+          
+        } else {
+          throw new Exception("[Intent Recognition] The request parameters are not supported.")
+        }
         
       }
       /*
@@ -51,22 +71,64 @@ class MarkovPredictor(topic:String) extends IntentPredictor {
          * from the provided state
          */
         val steps = req.data(Names.REQ_STEPS).toInt
-        val state = req.data(Names.REQ_STATE).toString
-    
-        val markovStates = ArrayBuffer.empty[MarkovState]
-        markovStates += nextMarkovState(state,states,matrix)
-    
-        if (steps > 1) {
-          (1 until steps.toInt).foreach(step => {
         
-            val prev = markovStates(step-1).name
-            markovStates += nextMarkovState(prev,states,matrix)
+        /*
+         * The Markov predictor is flexible with respect to the provided
+         * combination of request parameters: 
+         * 
+         */
+        if (req.data.contains(Names.REQ_STATE)) {
+          /*
+           * A single (last) state is provided, and starting from this
+           * state a set of most probable next states is computed
+           */
+          val state = req.data(Names.REQ_STATE).toString
+    
+          val markovStates = ArrayBuffer.empty[MarkovState]
+          markovStates += nextMarkovState(state,states,matrix)
+    
+          if (steps > 1) {
+            (1 until steps.toInt).foreach(step => {
         
+              val prev = markovStates(step-1).name
+              markovStates += nextMarkovState(prev,states,matrix)
+        
+            })
+          }
+          
+          val rules = MarkovRules(List(MarkovRule(state,markovStates.toList)))
+          Serializer.serializeMarkovRules(rules)
+        
+        } else if (req.data.contains(Names.REQ_STATES)) {
+          /*
+           * A list of (latest) states is provided, and for each state,
+           * a set of most probable next states is computed
+           */
+          val states = req.data(Names.REQ_STATES).split(",")
+          val rules = states.map(state => {
+          
+            val markovStates = ArrayBuffer.empty[MarkovState]
+            markovStates += nextMarkovState(state,states,matrix)
+    
+            if (steps > 1) {
+              (1 until steps.toInt).foreach(step => {
+        
+                val prev = markovStates(step-1).name
+                markovStates += nextMarkovState(prev,states,matrix)
+        
+              })
+            }
+          
+            MarkovRule(state,markovStates.toList)
+            
           })
+          
+          Serializer.serializeMarkovRules(MarkovRules(rules.toList))
+          
+        } else {
+          throw new Exception("[Intent Recognition] The request parameters are not supported.")
         }
-    
-        Serializer.serializeMarkovStates(MarkovStates(markovStates.toList))
-        
+       
       }
       
       case _ => throw new Exception("[Intent Recognition] This topic is not supported.")
