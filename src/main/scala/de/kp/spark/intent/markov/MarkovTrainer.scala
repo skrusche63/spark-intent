@@ -27,45 +27,32 @@ private case class Pair(ant:String,con:String)
 
 class MarkovTrainer(scale:Int,states:Array[String]) extends Serializable {
 
-  def build(dataset:RDD[Behavior]):TransitionMatrix = {
-   
-    def seqOp(support:HashMap[Pair,Int],seq:Behavior):HashMap[Pair,Int] = {
-          
-      val (site,user,states) = (seq.site,seq.user,seq.states)
-      /*
-       *  The pair support aggregates over all sites and users provided,
-       *  i.e. this is no personalized transition probability matrix
-       */  
-      for (i <- 1 until states.size) {
-        
-        val pair = new Pair(states(i-1),states(i))
-
-        support.get(pair) match {          
-          case None => support += pair -> 1
-          case Some(count) => support += pair -> (count + 1)
-        }
-
-      }
+  def build(rawset:RDD[Behavior]):TransitionMatrix = {
+    /*
+     * STEP #1: Determine the transitions (pairs of subsequent states)
+     * from the time ordered states of every (site,user) and compute
+     * the respective pair frequency
+     */
+    val pairs = rawset.flatMap(x => {
       
-      support
+      val (site,user,states) = (x.site,x.user,x.states)
+      states.zip(states.tail).map(v => Pair(v._1,v._2))
       
-    }
-    
-    /* Note that supp1 is always NULL */
-    def combOp(supp1:HashMap[Pair,Int],supp2:HashMap[Pair,Int]):HashMap[Pair,Int] = supp2      
+    })
 
-    /* Build pair support */
-    val pairsupp = dataset.coalesce(1, false).aggregate(HashMap.empty[Pair,Int])(seqOp,combOp)    
+    val pair_freq = pairs.groupBy(x => x).map(x => (x._1,x._2.size)).collect
 
-    /* Setup transition matrix and add pair support*/  	
+    /* 
+     * STEP #2: Setup transition matrix,add pair frequency
+     */  	
     val dim = states.length
     
     val matrix = new TransitionMatrix(dim,dim)
     matrix.setScale(scale)
     
     matrix.setStates(states, states)    
-    for ((pair,support) <- pairsupp) {
-      matrix.add(pair.ant, pair.con, support)
+    for ((pair,freq) <- pair_freq) {
+      matrix.add(pair.ant, pair.con, freq)
     }
             
     /* Normalize the matrix content and transform support into probabilities */

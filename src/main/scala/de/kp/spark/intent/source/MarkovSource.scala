@@ -18,18 +18,17 @@ package de.kp.spark.intent.source
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
+import de.kp.spark.intent.RequestContext
+
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.source._
 
-import de.kp.spark.intent.sample._
-
-class MarkovSource(@transient sc:SparkContext) {
+class MarkovSource(@transient ctx:RequestContext) {
 
   /*
    * A Markov source provides a scale factor, the respective Markov states 
@@ -39,18 +38,6 @@ class MarkovSource(@transient sc:SparkContext) {
     
     val intent = req.data(Names.REQ_INTENT)
     intent match {
-
-      case Intents.PURCHASE => {
-              
-        val source = new PurchaseSource(sc)
-        val dataset = source.get(req)
-        
-        val scale  = source.scale
-        val states = source.ostates
-      
-        (scale,states,dataset)
-        
-      }
       /*
        * A 'state' intent retrieves the user behavior from a state specification; 
        * no additional transformation is required. This supports more generic training
@@ -58,7 +45,7 @@ class MarkovSource(@transient sc:SparkContext) {
        */
       case Intents.STATE => {
 
-        val source = new StateSource(sc)
+        val source = new StateSource(ctx)
         val dataset = source.getAsBehavior(req)
         
         val scale = req.data(Names.REQ_SCALE).toInt
@@ -79,18 +66,6 @@ class MarkovSource(@transient sc:SparkContext) {
      
     val intent = req.data(Names.REQ_INTENT)
     intent match {
-
-      case Intents.LOYALTY => {
-              
-        val source = new LoyaltySource(sc)
-        val dataset = source.get(req)
-        
-        val ostates = source.ostates
-        val hstates = source.hstates
-
-        (hstates,ostates,dataset)
-        
-      }
       /*
        * A 'state' intent retrieves the user behavior from a state specification; 
        * no additional transformation is required. This supports more generic training
@@ -98,7 +73,7 @@ class MarkovSource(@transient sc:SparkContext) {
        */
       case Intents.STATE => {
 
-        val source = new StateSource(sc)
+        val source = new StateSource(ctx)
         val dataset = source.getAsObservation(req)
         
         val hstates = req.data(Names.REQ_HSTATES).split(",")

@@ -25,6 +25,26 @@ import org.json4s.native.Serialization.{read,write}
 
 import de.kp.spark.core.model._
 
+/**
+ * ParquetMSP specifies a Parquet file that describes the Markov state 
+ * prediction
+ */
+case class ParquetMSP(
+  /*
+   * The last state of a set of time ordered user states, and 
+   * the starting point (reference) for the state forecast.
+   */
+  last_state:String,
+  /* The look ahead step, the state and score refers to */
+  step:Int,
+  /*
+   * The follow on state of a certain look ahead step with 
+   * respect to the starting one
+   */
+  state:String,
+  score:Double
+)
+
 case class Purchase(site:String,user:String,timestamp:Long,amount:Float)
 case class Purchases(items:List[Purchase])
 

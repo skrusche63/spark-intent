@@ -20,8 +20,6 @@ package de.kp.spark.intent.api
 
 import java.util.Date
 
-import org.apache.spark.SparkContext
-
 import akka.actor.{ActorRef,ActorSystem,Props}
 import akka.pattern.ask
 
@@ -42,20 +40,20 @@ import de.kp.spark.core.model._
 import de.kp.spark.core.rest.RestService
 
 import de.kp.spark.intent.actor.IntentMaster
-import de.kp.spark.intent.Configuration
+import de.kp.spark.intent.{RequestContext => RequestCtx}
 
 import de.kp.spark.intent.model._
 
 
-class RestApi(host:String,port:Int,system:ActorSystem,@transient val sc:SparkContext) extends HttpService with Directives {
+class RestApi(host:String,port:Int,system:ActorSystem,@transient val ctx:RequestCtx) extends HttpService with Directives {
 
   implicit val ec:ExecutionContext = system.dispatcher  
   import de.kp.spark.core.rest.RestJsonSupport._
   
   override def actorRefFactory:ActorSystem = system
   
-  val (duration,retries,time) = Configuration.actor   
-  val master = system.actorOf(Props(new IntentMaster(sc)), name="intent-master")
+  val (duration,retries,time) = ctx.config.actor   
+  val master = system.actorOf(Props(new IntentMaster(ctx)), name="intent-master")
  
   private val service = "intent"
     

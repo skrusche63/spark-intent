@@ -18,20 +18,21 @@ package de.kp.spark.intent.source
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
+import de.kp.spark.intent.RequestContext
+
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.spec.StateFields
 
-class StateModel(@transient sc:SparkContext) extends Serializable {
+class StateModel(@transient ctx:RequestContext) extends Serializable {
   
   def behaviorFromElastic(req:ServiceRequest, rawset:RDD[Map[String,String]]):RDD[Behavior] = {
     
-    val spec = sc.broadcast(new StateFields().get(req))
+    val spec = ctx.sc.broadcast(new StateFields().get(req))
     val states = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1)
@@ -50,7 +51,7 @@ class StateModel(@transient sc:SparkContext) extends Serializable {
   
   def observationFromElastic(req:ServiceRequest, rawset:RDD[Map[String,String]]):Array[String] = {
     
-    val spec = sc.broadcast(new StateFields().get(req))
+    val spec = ctx.sc.broadcast(new StateFields().get(req))
     val states = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1)
@@ -95,7 +96,7 @@ class StateModel(@transient sc:SparkContext) extends Serializable {
   
   def behaviorFromJDBC(req:ServiceRequest, rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
   
-    val spec = sc.broadcast(new StateFields().get(req))
+    val spec = ctx.sc.broadcast(new StateFields().get(req))
     val states = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
@@ -114,7 +115,7 @@ class StateModel(@transient sc:SparkContext) extends Serializable {
   
   def observationFromJDBC(req:ServiceRequest, rawset:RDD[Map[String,Any]]):Array[String] = {
   
-    val spec = sc.broadcast(new StateFields().get(req))
+    val spec = ctx.sc.broadcast(new StateFields().get(req))
     val states = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
@@ -133,7 +134,7 @@ class StateModel(@transient sc:SparkContext) extends Serializable {
  
   def behaviorFromParquet(req:ServiceRequest, rawset:RDD[Map[String,Any]]):RDD[Behavior] = {
     
-    val spec = sc.broadcast(new StateFields().get(req))
+    val spec = ctx.sc.broadcast(new StateFields().get(req))
     val states = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]
@@ -152,7 +153,7 @@ class StateModel(@transient sc:SparkContext) extends Serializable {
  
   def observationFromParquet(req:ServiceRequest, rawset:RDD[Map[String,Any]]):Array[String] = {
     
-    val spec = sc.broadcast(new StateFields().get(req))
+    val spec = ctx.sc.broadcast(new StateFields().get(req))
     val states = rawset.map(data => {
       
       val site = data(spec.value(Names.SITE_FIELD)._1).asInstanceOf[String]

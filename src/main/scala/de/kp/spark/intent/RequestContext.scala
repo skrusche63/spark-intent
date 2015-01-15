@@ -1,4 +1,4 @@
-package de.kp.spark.intent.model
+package de.kp.spark.intent
 /* Copyright (c) 2014 Dr. Krusche & Partner PartG
  * 
  * This file is part of the Spark-Intent project
@@ -18,29 +18,17 @@ package de.kp.spark.intent.model
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import de.kp.spark.core.model._
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.SQLContext
 
-object PredictorFactory {
+class RequestContext(  /*
+   * Reference to the common SparkContext; this context can be used
+   * to access HDFS based data sources or leverage the Spark machine
+   * learning library or other Spark based functionality
+   */
+  @transient val sc:SparkContext) extends Serializable {
 
-  def getPredictor(topic:String):IntentPredictor = {
-         
-    topic match {
-      /*
-       * The 'observation' topic supports requests to uncover a set
-       * of (hidden) states from a certain observation. Note, that
-       * this topic is restricted to Hidden Markov Models
-       * 
-       * The 'state' topic supports requests to determine a sequence
-       * of most probable Markovian state, that follow a certain state.
-       * 
-       * Note, that this topic is not applicable to Hidden Markov models
-       */
-      case "observation" | "state" => new MarkovPredictor(topic)
-      
-      case _ => throw new Exception("Unknown topic.")
-    
-    }
-    
-  }  
-  
+  val sqlc = new SQLContext(sc)
+  val config = Configuration
+
 }

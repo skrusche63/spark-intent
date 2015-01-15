@@ -30,13 +30,13 @@ import de.kp.spark.core.Names
 import de.kp.spark.core.actor._
 import de.kp.spark.core.model._
 
-import de.kp.spark.intent.Configuration
+import de.kp.spark.intent.RequestContext
 import de.kp.spark.intent.model._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class ModelBuilder(@transient sc:SparkContext) extends BaseTrainer(Configuration) {
+class ModelBuilder(@transient ctx:RequestContext) extends BaseTrainer(ctx.config) {
 
   override def validate(req:ServiceRequest):Option[String] = {
 
@@ -83,10 +83,10 @@ class ModelBuilder(@transient sc:SparkContext) extends BaseTrainer(Configuration
 
     val algorithm = req.data(Names.REQ_ALGORITHM)
     if (algorithm == Algorithms.HIDDEN_MARKOV) {  
-      context.actorOf(Props(new HiddenMarkovActor(sc)))      
+      context.actorOf(Props(new HiddenMarkovActor(ctx)))      
       
     } else {
-      context.actorOf(Props(new MarkovActor(sc)))      
+      context.actorOf(Props(new MarkovActor(ctx)))      
     
     }
     

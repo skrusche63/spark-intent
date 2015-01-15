@@ -18,12 +18,10 @@ package de.kp.spark.intent.actor
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import org.apache.spark.SparkContext
-
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
-import de.kp.spark.intent.{Configuration}
+import de.kp.spark.intent.RequestContext
 import de.kp.spark.intent.source.MarkovSource
 
 import de.kp.spark.intent.model._
@@ -31,9 +29,9 @@ import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.HiddenMarkovTrainer
 
-class HiddenMarkovActor(@transient sc:SparkContext) extends BaseActor {
+class HiddenMarkovActor(@transient ctx:RequestContext) extends BaseActor {
 
-  private val base = Configuration.markov  
+  private val base = ctx.config.markov  
   private val sink = new RedisSink()
   
   def receive = {
@@ -80,7 +78,7 @@ class HiddenMarkovActor(@transient sc:SparkContext) extends BaseActor {
     val epsilon = req.data("epsilon").toDouble
     val iterations = req.data("iterations").toInt
     
-    val (hstates,ostates,observations) = new MarkovSource(sc).getAsObservation(req)
+    val (hstates,ostates,observations) = new MarkovSource(ctx).getAsObservation(req)
     val model = HiddenMarkovTrainer.train(hstates,ostates,observations,epsilon,iterations)
     
     val now = new java.util.Date()

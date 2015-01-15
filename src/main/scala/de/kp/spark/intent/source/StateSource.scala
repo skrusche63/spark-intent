@@ -18,7 +18,6 @@ package de.kp.spark.intent.source
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import de.kp.spark.core.Names
@@ -26,15 +25,14 @@ import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 import de.kp.spark.core.source._
 
-import de.kp.spark.intent.Configuration
+import de.kp.spark.intent.RequestContext
 import de.kp.spark.intent.model._
 
 import de.kp.spark.intent.spec.StateFields
 
-class StateSource(@transient sc:SparkContext) {
-
-  private val config = Configuration
-  private val model = new StateModel(sc)
+class StateSource(@transient ctx:RequestContext) {
+  
+  private val model = new StateModel(ctx)
   
   def getAsBehavior(req:ServiceRequest):RDD[Behavior] = {
    
@@ -43,14 +41,16 @@ class StateSource(@transient sc:SparkContext) {
 
       case Sources.ELASTIC => {
         
-        val rawset = new ElasticSource(sc).connect(config,req)    
+        val rawset = new ElasticSource(ctx.sc).connect(ctx.config,req)    
         model.behaviorFromElastic(req,rawset)
 
       }
 
       case Sources.FILE => {
+       
+        val store = req.data(Names.REQ_URL)
         
-        val rawset = new FileSource(sc).connect(config.input(0),req)
+        val rawset = new FileSource(ctx.sc).connect(store,req)
         model.behaviorFromFile(req,rawset)
         
       }
@@ -60,17 +60,16 @@ class StateSource(@transient sc:SparkContext) {
         val fieldspec = new StateFields().get(req)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
-        val rawset = new JdbcSource(sc).connect(config,req,fields)
+        val rawset = new JdbcSource(ctx.sc).connect(ctx.config,req,fields)
         model.behaviorFromJDBC(req,rawset)
         
       }
 
       case Sources.PARQUET => {
-    
-        val fieldspec = new StateFields().get(req)
-        val fields = fieldspec.map(kv => kv._2._1).toList
+       
+        val store = req.data(Names.REQ_URL)
         
-        val rawset = new ParquetSource(sc).connect(config.input(0),req,fields)
+        val rawset = new ParquetSource(ctx.sc).connect(store,req)
         model.behaviorFromParquet(req,rawset)
         
       }
@@ -88,14 +87,16 @@ class StateSource(@transient sc:SparkContext) {
 
       case Sources.ELASTIC => {
         
-        val rawset = new ElasticSource(sc).connect(config,req)    
+        val rawset = new ElasticSource(ctx.sc).connect(ctx.config,req)    
         model.observationFromElastic(req,rawset)
 
       }
 
       case Sources.FILE => {
-        
-        val rawset = new FileSource(sc).connect(config.input(0),req)
+       
+        val store = req.data(Names.REQ_URL)
+         
+        val rawset = new FileSource(ctx.sc).connect(store,req)
         model.observationFromFile(req,rawset)
         
       }
@@ -105,17 +106,16 @@ class StateSource(@transient sc:SparkContext) {
         val fieldspec = new StateFields().get(req)
         val fields = fieldspec.map(kv => kv._2._1).toList
         
-        val rawset = new JdbcSource(sc).connect(config,req,fields)
+        val rawset = new JdbcSource(ctx.sc).connect(ctx.config,req,fields)
         model.observationFromJDBC(req,rawset)
         
       }
 
       case Sources.PARQUET => {
-    
-        val fieldspec = new StateFields().get(req)
-        val fields = fieldspec.map(kv => kv._2._1).toList
-        
-        val rawset = new ParquetSource(sc).connect(config.input(0),req,fields)
+       
+        val store = req.data(Names.REQ_URL)
+         
+        val rawset = new ParquetSource(ctx.sc).connect(store,req)
         model.observationFromParquet(req,rawset)
         
       }

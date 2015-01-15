@@ -18,14 +18,14 @@ package de.kp.spark.intent.api
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-import org.apache.spark.SparkContext
 import akka.actor.{ActorSystem,Props}
 
+import de.kp.spark.intent.RequestContext
 import de.kp.spark.intent.actor.IntentMaster
 
-class AkkaApi(system:ActorSystem,@transient val sc:SparkContext) {
+class AkkaApi(system:ActorSystem,@transient val ctx:RequestContext) {
 
-  val master = system.actorOf(Props(new IntentMaster(sc)), name="intent-master")
+  val master = system.actorOf(Props(new IntentMaster(ctx)), name="intent-master")
 
   def start() {
      while (true) {}   
