@@ -45,15 +45,7 @@ case class ParquetMSP(
   score:Double
 )
 
-case class Purchase(site:String,user:String,timestamp:Long,amount:Float)
-case class Purchases(items:List[Purchase])
-
-object Serializer extends BaseSerializer {
-  
-  def serializePurchases(purchases:Purchases):String = write(purchases)
-  def deserializePurchases(purchases:String):Purchases = read[Purchases](purchases)
-  
-}
+object Serializer extends BaseSerializer
 
 object Algorithms {
   
@@ -67,8 +59,6 @@ object Algorithms {
 
 object Intents {
   
-  val LOYALTY:String  = "LOYALTY"
-  val PURCHASE:String = "PURCHASE"
   /*
    * This is an internally used intent to indicate that
    * direct state oriented processing is required
@@ -100,10 +90,7 @@ object Messages extends BaseMessages {
   
   def MISSING_PARAMETERS(uid:String):String = 
     String.format("""[UID: %s] Parameters are missing.""", uid)
-  
-  def MISSING_PURCHASES(uid:String):String = 
-    String.format("""[UID: %s] Purchase is missing.""", uid)
-  
+ 
   def MODEL_DOES_NOT_EXIST(uid:String):String = 
     String.format("""[UID: %s] Model does not exist.""", uid)
   

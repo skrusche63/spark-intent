@@ -175,15 +175,15 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val ctx:Request
    * - name (String)
    * 
    * - user (String)
-   * - timestamp (String) 
-   * - amount (Float)
+   * - timestamp (Long) 
+   * - state (String)
    * 
    */    
   private def doRegister[T](ctx:RequestContext,subject:String) = {
 	
     val task = "register:" + subject
     
-    val topics = List("amount")
+    val topics = List("state")
     if (topics.contains(subject)) doRequest(ctx,service,task)
      
   }  
@@ -203,7 +203,7 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val ctx:Request
 	
     val task = "index:" + subject
     
-    val topics = List("amount")
+    val topics = List("state")
     if (topics.contains(subject)) doRequest(ctx,service,task)
     
   }
@@ -218,15 +218,15 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val ctx:Request
    * - type (String)
    * 
    * - user (String)
-   * - timestamp (String) 
-   * - amount (Float)
+   * - timestamp (Long) 
+   * - state (String)
    * 
    */   
   private def doTrack[T](ctx:RequestContext,subject:String) = {
 	
     val task = "track:" + subject
     
-    val topics = List("amount")
+    val topics = List("state")
     if (topics.contains(subject)) doRequest(ctx,service,task)
 
   }
@@ -275,10 +275,6 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val ctx:Request
    * 
    * and the following parameters depend on the selected topic:
    * 
-   * topic: loyalty, purchase
-   * 
-   * - purchases (String, specification of observed purchases)
-   * 
    * topic: observation
    * 
    * This topic supports the retrieval of a sequence of states
@@ -301,7 +297,7 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val ctx:Request
 	
     val task = "get:" + subject
     
-    val topics = List("loyalty","purchase","observation","state")
+    val topics = List("observation","state")
     if (topics.contains(subject)) doRequest(ctx,service,task)
     
   }  
@@ -315,7 +311,7 @@ class RestApi(host:String,port:Int,system:ActorSystem,@transient val ctx:Request
    * - algorithm (String, MARKOV, HIDDEN_MARKOV)
    * - source (String, ELASTIC, FILE, JDBC, PIWIK)
    * 
-   * - intent (String, LOYALTY, PURCHASE)
+   * - intent (String, STATE)
    * 
    * and the following parameters depend on the selected source:
    * 
