@@ -22,7 +22,7 @@ import akka.actor.{ActorSystem,Props}
 import com.typesafe.config.ConfigFactory
 
 import de.kp.spark.core.SparkService
-import de.kp.spark.intent.api.{AkkaApi,RestApi}
+import de.kp.spark.intent.api.AkkaApi
 
 object IntentService extends SparkService {
   
@@ -31,17 +31,6 @@ object IntentService extends SparkService {
   def main(args: Array[String]) {
     
     val ctx = new RequestContext(sc)
-    
-    /**
-     * REST API 
-     */
-    val httpSystem = ActorSystem("rest-server")
-    sys.addShutdownHook(httpSystem.shutdown)
-    
-    val (host,port) = Configuration.rest
-    new RestApi(host,port,httpSystem,ctx).start()
- 
-    println("REST API activated.")
     
     /**
      * AKKA API 
