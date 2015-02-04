@@ -67,19 +67,6 @@ object Intents {
     
 }
 
-object Sources {
-  /* The names of the data source actually supported */
-  val FILE:String    = "FILE"
-  val ELASTIC:String = "ELASTIC" 
-  val JDBC:String    = "JDBC"    
-  val PARQUET:String = "PARQUET"    
-  val PIWIK:String   = "PIWIK"  
-    
-  private val sources = List(FILE,ELASTIC,JDBC,PARQUET,PIWIK)
-  def isSource(source:String):Boolean = sources.contains(source)
-    
-}
-
 object Messages extends BaseMessages {
   
   def MODEL_BUILDING_STARTED(uid:String):String = 

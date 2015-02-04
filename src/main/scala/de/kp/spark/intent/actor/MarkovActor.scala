@@ -22,14 +22,16 @@ import org.apache.spark.SparkContext._
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
+import de.kp.spark.core.source.StateSource
+import de.kp.spark.core.source.handler.StateHandler
+
 import de.kp.spark.intent.RequestContext
+import de.kp.spark.intent.spec.StateSpec
 
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov._
-import de.kp.spark.intent.source._
-
 import scala.collection.mutable.Buffer
 
 class MarkovActor(@transient ctx:RequestContext) extends BaseActor {
@@ -73,8 +75,13 @@ class MarkovActor(@transient ctx:RequestContext) extends BaseActor {
   }
    
   private def train(req:ServiceRequest) {
- 
-    val (scale,states,dataset) = new MarkovSource(ctx).getAsBehavior(req)
+
+    val source = new StateSource(ctx.sc,ctx.config,StateSpec)
+    val dataset = StateHandler.state2Behavior(source.connect(req))
+        
+    val scale = req.data(Names.REQ_SCALE).toInt
+    val states = req.data(Names.REQ_STATES).split(",")
+    
     val matrix = new MarkovTrainer(scale,states).build(dataset)
     
     /*

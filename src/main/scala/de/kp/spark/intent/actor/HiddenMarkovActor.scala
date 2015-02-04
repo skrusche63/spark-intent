@@ -21,8 +21,11 @@ package de.kp.spark.intent.actor
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
+import de.kp.spark.core.source.StateSource
+import de.kp.spark.core.source.handler.StateHandler
+
 import de.kp.spark.intent.RequestContext
-import de.kp.spark.intent.source.MarkovSource
+import de.kp.spark.intent.spec.StateSpec
 
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
@@ -78,8 +81,13 @@ class HiddenMarkovActor(@transient ctx:RequestContext) extends BaseActor {
     val epsilon = req.data("epsilon").toDouble
     val iterations = req.data("iterations").toInt
     
-    val (hstates,ostates,observations) = new MarkovSource(ctx).getAsObservation(req)
-    val model = HiddenMarkovTrainer.train(hstates,ostates,observations,epsilon,iterations)
+    val source = new StateSource(ctx.sc,ctx.config,StateSpec)
+    val dataset = StateHandler.state2Observation(source.connect(req))
+       
+    val hstates = req.data(Names.REQ_HSTATES).split(",")
+    val ostates = req.data(Names.REQ_OSTATES).split(",")
+
+    val model = HiddenMarkovTrainer.train(hstates,ostates,dataset,epsilon,iterations)
     
     val now = new java.util.Date()
     val dir = String.format("""%s/model/%s/%s""",base,name,now.getTime().toString)

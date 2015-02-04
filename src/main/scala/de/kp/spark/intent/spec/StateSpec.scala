@@ -19,15 +19,18 @@ package de.kp.spark.intent.spec
  */
 
 import de.kp.spark.core.model._
+
 import de.kp.spark.core.redis.RedisCache
+import de.kp.spark.core.spec.Fields
 
 import de.kp.spark.intent.Configuration
-import de.kp.spark.intent.model._
 
 import scala.xml._
 import scala.collection.mutable.HashMap
 
-class Fields {
+object StateSpec extends Fields {
+
+  val state_xml:String = "state_fields.xml"  
     
   val (host,port) = Configuration.redis
   val cache = new RedisCache(host,port.toInt)
@@ -63,7 +66,29 @@ class Fields {
     }
     
   }
-  
-  def fromXML:Map[String,(String,String)] = null
+
+  def fromXML:Map[String,(String,String)] = {
+     
+    val fields = HashMap.empty[String,(String,String)]
+    /*
+     * In case of no dynamic metadata provided, the field specification
+     * is retrieved from pre-defined xml files
+     */
+    val root = XML.load(getClass.getClassLoader.getResource(state_xml))  
+    if (root == null) throw new Exception("Intent is unknown.")
+      
+    for (field <- root \ "field") {
+      
+      val _name  = (field \ "@name").toString
+      val _type  = (field \ "@type").toString
+
+      val _mapping = field.text
+      fields += _name -> (_mapping,_type) 
+      
+    }
+
+    fields.toMap
+    
+  }
   
 }
