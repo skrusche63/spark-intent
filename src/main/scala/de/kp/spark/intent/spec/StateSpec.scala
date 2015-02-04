@@ -35,11 +35,11 @@ object StateSpec extends Fields {
   val (host,port) = Configuration.redis
   val cache = new RedisCache(host,port.toInt)
   
-  def get(req:ServiceRequest):Map[String,(String,String)] = {
+  def get(req:ServiceRequest):Map[String,String] = {
 
     try {
     
-      val fields = HashMap.empty[String,(String,String)]
+      val fields = HashMap.empty[String,String]
           
       if (cache.fieldsExist(req)) {      
         
@@ -47,10 +47,9 @@ object StateSpec extends Fields {
         for (field <- fieldspec) {
         
           val _name = field.name
-          val _type = field.datatype
-          
           val _mapping = field.value
-          fields += _name -> (_mapping,_type) 
+
+          fields += _name -> _mapping 
           
         }
     
@@ -62,14 +61,14 @@ object StateSpec extends Fields {
       }
       
     } catch {
-      case e:Exception => Map.empty[String,(String,String)]
+      case e:Exception => Map.empty[String,String]
     }
     
   }
 
-  def fromXML:Map[String,(String,String)] = {
+  def fromXML:Map[String,String] = {
      
-    val fields = HashMap.empty[String,(String,String)]
+    val fields = HashMap.empty[String,String]
     /*
      * In case of no dynamic metadata provided, the field specification
      * is retrieved from pre-defined xml files
@@ -80,10 +79,9 @@ object StateSpec extends Fields {
     for (field <- root \ "field") {
       
       val _name  = (field \ "@name").toString
-      val _type  = (field \ "@type").toString
-
       val _mapping = field.text
-      fields += _name -> (_mapping,_type) 
+
+      fields += _name -> _mapping
       
     }
 
