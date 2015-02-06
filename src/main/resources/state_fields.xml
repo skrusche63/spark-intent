@@ -2,5 +2,5 @@
 	<field name="site" type="String">site</field>
 	<field name="user" type="String">user</field>
 	<field name="timestamp" type="Long">timestamp</field>
-    <field name="amount" type="Float">amount</field>
+    <field name="state" type="String">state</field>
 </fieldspec>
