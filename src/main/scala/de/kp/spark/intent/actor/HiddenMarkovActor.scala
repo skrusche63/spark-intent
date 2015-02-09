@@ -81,7 +81,7 @@ class HiddenMarkovActor(@transient ctx:RequestContext) extends BaseActor {
     val epsilon = req.data("epsilon").toDouble
     val iterations = req.data("iterations").toInt
     
-    val source = new StateSource(ctx.sc,ctx.config,StateSpec)
+    val source = new StateSource(ctx.sc,ctx.config,new StateSpec(req))
     val dataset = StateHandler.state2Observation(source.connect(req))
        
     val hstates = req.data(Names.REQ_HSTATES).split(",")

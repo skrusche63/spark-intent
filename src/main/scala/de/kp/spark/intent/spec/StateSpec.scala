@@ -26,67 +26,58 @@ import de.kp.spark.core.spec.Fields
 import de.kp.spark.intent.Configuration
 
 import scala.xml._
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.Buffer
 
-object StateSpec extends Fields {
+class StateSpec(req:ServiceRequest) extends Fields {
 
-  val state_xml:String = "state_fields.xml"  
+  val path:String = "state_fields.xml"  
     
   val (host,port) = Configuration.redis
   val cache = new RedisCache(host,port.toInt)
-  
-  def get(req:ServiceRequest):Map[String,String] = {
 
-    try {
+  private val fields = load
+  
+  def mapping:Map[String,String] = fields.map(x => (x.name,x.value)).toMap
+
+  def names:List[String] = fields.map(_.name)
+  
+  def types:List[String] = fields.map(_.datatype)
+  
+  private val load:List[Field] = {
     
-      val fields = HashMap.empty[String,String]
+    val data = Buffer.empty[Field]
+    
+    try {
           
-      if (cache.fieldsExist(req)) {      
+      if (cache.fieldsExist(req)) {   
         
         val fieldspec = cache.fields(req)
         for (field <- fieldspec) {
-        
-          val _name = field.name
-          val _mapping = field.value
-
-          fields += _name -> _mapping 
-          
+          data += Field(field.name,field.datatype,field.value)
         }
-    
-        fields.toMap
         
       } else {
-        fromXML
-        
-      }
+
+        val root = XML.load(getClass.getClassLoader.getResource(path))     
+        for (field <- root \ "field") {
+      
+          val _name  = (field \ "@name").toString
+          val _type  = (field \ "@type").toString
+
+          val _mapping = field.text
+          
+          data += Field(_name,_type,_mapping)
+      
+        }
+      
+     }
       
     } catch {
-      case e:Exception => Map.empty[String,String]
+      case e:Exception => {}
     }
     
-  }
-
-  def fromXML:Map[String,String] = {
-     
-    val fields = HashMap.empty[String,String]
-    /*
-     * In case of no dynamic metadata provided, the field specification
-     * is retrieved from pre-defined xml files
-     */
-    val root = XML.load(getClass.getClassLoader.getResource(state_xml))  
-    if (root == null) throw new Exception("Intent is unknown.")
-      
-    for (field <- root \ "field") {
-      
-      val _name  = (field \ "@name").toString
-      val _mapping = field.text
-
-      fields += _name -> _mapping
-      
-    }
-
-    fields.toMap
+    data.toList
     
-  }
+  } 
   
 }

@@ -1,6 +1,6 @@
 <fieldspec>
-	<field name="site" type="String">site</field>
-	<field name="user" type="String">user</field>
-	<field name="timestamp" type="Long">timestamp</field>
-    <field name="state" type="String">state</field>
+	<field name="site" type="string">site</field>
+	<field name="user" type="string">user</field>
+	<field name="timestamp" type="long">timestamp</field>
+    <field name="state" type="string">state</field>
 </fieldspec>

@@ -76,7 +76,7 @@ class MarkovActor(@transient ctx:RequestContext) extends BaseActor {
    
   private def train(req:ServiceRequest) {
 
-    val source = new StateSource(ctx.sc,ctx.config,StateSpec)
+    val source = new StateSource(ctx.sc,ctx.config,new StateSpec(req))
     val dataset = StateHandler.state2Behavior(source.connect(req))
         
     val scale = req.data(Names.REQ_SCALE).toInt
