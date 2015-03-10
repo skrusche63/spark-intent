@@ -3,6 +3,8 @@ package de.kp.spark.intent.model
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
+import de.kp.spark.intent.Configuration
+
 import de.kp.spark.intent.markov._
 import de.kp.spark.intent.model._
 
@@ -10,8 +12,9 @@ import de.kp.spark.intent.sink.RedisSink
 import scala.collection.mutable.ArrayBuffer
 
 class MarkovPredictor(topic:String) extends IntentPredictor {
-  
-  private val sink = new RedisSink()
+
+  private val (host,port) = Configuration.redis
+  private val sink = new RedisSink(host,port.toInt)
 
   def predict(req:ServiceRequest):String = {
     

@@ -25,12 +25,10 @@ import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 import de.kp.spark.core.redis.RedisClient
 
-import de.kp.spark.intent.Configuration
 import scala.collection.JavaConversions._
 
-class RedisSink {
+class RedisSink(host:String,port:Int) {
 
-  val (host,port) = Configuration.redis
   val client = RedisClient(host,port.toInt)
   
   def addModel(req:ServiceRequest,model:String) {

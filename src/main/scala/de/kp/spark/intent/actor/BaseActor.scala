@@ -25,24 +25,10 @@ import de.kp.spark.core.actor.RootActor
 
 import de.kp.spark.core.model._
 
-import de.kp.spark.intent.{Configuration,RemoteContext}
+import de.kp.spark.intent.Configuration
 import de.kp.spark.intent.model._
 
 abstract class BaseActor extends RootActor(Configuration) {
-
-  /**
-   * Notify all registered listeners about a certain status
-   */
-  protected def notify(req:ServiceRequest,status:String) {
-
-    /* Build message */
-    val response = new ServiceResponse(req.service,req.task,req.data,status)	
-    
-    /* Notify listeners */
-    val message = Serializer.serializeResponse(response)    
-    RemoteContext.notify(message)
-    
-  }
   
   protected def response(req:ServiceRequest,missing:Boolean):ServiceResponse = {
     

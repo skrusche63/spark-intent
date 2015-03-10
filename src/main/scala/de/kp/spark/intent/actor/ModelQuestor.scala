@@ -21,13 +21,17 @@ package de.kp.spark.intent.actor
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
+import de.kp.spark.intent.Configuration
+
 import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
 
 class ModelQuestor extends BaseActor {
 
   implicit val ec = context.dispatcher
-  private val sink = new RedisSink()
+
+  private val (host,port) = Configuration.redis
+  private val sink = new RedisSink(host,port.toInt)
   
   def receive = {
     

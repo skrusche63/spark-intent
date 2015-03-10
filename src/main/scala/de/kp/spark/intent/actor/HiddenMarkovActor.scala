@@ -31,62 +31,45 @@ import de.kp.spark.intent.model._
 import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.HiddenMarkovTrainer
+import scala.collection.mutable.ArrayBuffer
 
-class HiddenMarkovActor(@transient ctx:RequestContext) extends BaseActor {
+class HiddenMarkovActor(@transient ctx:RequestContext) extends TrainActor(ctx) {
 
   private val base = ctx.config.markov  
-  private val sink = new RedisSink()
   
-  def receive = {
+  override def validate(req:ServiceRequest) {
+
+    if (req.data.contains("name") == false) 
+      throw new Exception("No name for Hidden Markov model provided.")
     
-    case req:ServiceRequest => {
+    if (req.data.contains("epsilon") == false)
+      throw new Exception("Parameter 'epsilon' is missing.")
 
-      val missing = (properties(req) == false)
-      sender ! response(req, missing)
-
-      if (missing == false) {
- 
-        try {
-            build(req)
-          
-        } catch {
-          case e:Exception => cache.addStatus(req,IntentStatus.FAILURE)          
-        }
-
-      }
-      
-      context.stop(self)
-          
-    }
-    
-    case _ => {
-      log.error("Unknow request.")
-      context.stop(self)     
-
-    }
-    
+    if (req.data.contains("iterations") == false)
+      throw new Exception("Parameter 'iterations' is missing.")
+   
   }
    
-  private def build(req:ServiceRequest) {
-    /**
-     * The training request must provide a name for the random forest 
-     * to uniquely distinguish this forest from all others
-     */
-    val name = if (req.data.contains(Names.REQ_NAME)) req.data(Names.REQ_NAME) 
-      else throw new Exception("No name for hidden markov model provided.")
-
-    /* Register status */
-    cache.addStatus(req,IntentStatus.MODEL_TRAINING_STARTED)
-
-    val epsilon = req.data("epsilon").toDouble
-    val iterations = req.data("iterations").toInt
+  override def train(req:ServiceRequest) {
     
     val source = new StateSource(ctx.sc,ctx.config,new StateSpec(req))
     val dataset = StateHandler.state2Observation(source.connect(req))
+
+    val name = req.data(Names.REQ_NAME) 
+      
+    val params = ArrayBuffer.empty[Param]
+
+    val epsilon = req.data("epsilon").toDouble
+    params += Param("epsilon","double",epsilon.toString)
+
+    val iterations = req.data("iterations").toInt
+    params += Param("iterations","integer",iterations.toString)
+
+    cache.addParams(req, params.toList)
        
     val hstates = req.data(Names.REQ_HSTATES).split(",")
     val ostates = req.data(Names.REQ_OSTATES).split(",")
-
+ 
     val model = HiddenMarkovTrainer.train(hstates,ostates,dataset,epsilon,iterations)
     
     val now = new java.util.Date()
@@ -96,23 +79,8 @@ class HiddenMarkovActor(@transient ctx:RequestContext) extends BaseActor {
     model.save(dir)
     
     /* Put model to sink */
-    sink.addModel(req,dir)
-          
-    /* Update cache */
-    cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
-
-    /* Notify potential listeners */
-    notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
+    redis.addModel(req,dir)
  
-  }
-  
-  private def properties(req:ServiceRequest):Boolean = {
-    
-    if (req.data.contains("epsilon") == false) return false
-    if (req.data.contains("iterations") == false) return false
-    
-    true
-    
   }
   
 }

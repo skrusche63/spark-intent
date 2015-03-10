@@ -17,7 +17,6 @@ package de.kp.spark.intent.actor
  * 
  * If not, see <http://www.gnu.org/licenses/>.
  */
-import org.apache.spark.SparkContext._
 
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
@@ -29,52 +28,22 @@ import de.kp.spark.intent.RequestContext
 import de.kp.spark.intent.spec.StateSpec
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov._
 import scala.collection.mutable.Buffer
 
-class MarkovActor(@transient ctx:RequestContext) extends BaseActor {
+class MarkovActor(@transient ctx:RequestContext) extends TrainActor(ctx) {
 
   import ctx.sqlc.createSchemaRDD
-  private val sink = new RedisSink()
   
-  def receive = {
-    
-    case req:ServiceRequest => {
+  override def validate(req:ServiceRequest) {
 
-      val missing = (properties(req) == false)
-      
-      /* Send response to originator of request */
-      sender ! response(req, missing)
-
-      if (missing == false) {
-        /* Register status */
-        cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
- 
-        try {
-
-          train(req)
-          
-        } catch {
-          case e:Exception => cache.addStatus(req,IntentStatus.FAILURE)          
-        }
-
-      }
-      
-      context.stop(self)
-          
-    }
-    
-    case _ => {
-      log.error("Unknown request.")
-      context.stop(self)
-      
-    }
+    if (req.data.contains("name") == false) 
+      throw new Exception("No name for Markov model provided.")
     
   }
    
-  private def train(req:ServiceRequest) {
+  override def train(req:ServiceRequest) {
 
     val source = new StateSource(ctx.sc,ctx.config,new StateSpec(req))
     val dataset = StateHandler.state2Behavior(source.connect(req))
@@ -149,17 +118,9 @@ class MarkovActor(@transient ctx:RequestContext) extends BaseActor {
     
     /* Put model to sink */
     val model = new MarkovSerializer().serialize(scale,states,matrix)
-    sink.addModel(req,model)
-          
-    /* Update cache */
-    cache.addStatus(req,IntentStatus.MODEL_TRAINING_FINISHED)
-
-    /* Notify potential listeners */
-    notify(req,IntentStatus.MODEL_TRAINING_FINISHED)
+    redis.addModel(req,model)
     
   }
-  
-  private def properties(req:ServiceRequest):Boolean = req.data.contains("intent")
 
   private def nextMarkovState(state:String,states:Array[String],matrix:TransitionMatrix):MarkovState = {
      
