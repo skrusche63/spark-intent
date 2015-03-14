@@ -24,11 +24,10 @@ import de.kp.spark.core.model._
 import de.kp.spark.core.source.StateSource
 import de.kp.spark.core.source.handler.StateHandler
 
-import de.kp.spark.intent.RequestContext
+import de.kp.spark.intent.{MarkovIO,RequestContext}
 import de.kp.spark.intent.spec.StateSpec
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.sink.RedisSink
 
 import de.kp.spark.intent.markov.HiddenMarkovTrainer
 import scala.collection.mutable.ArrayBuffer
@@ -73,13 +72,10 @@ class HiddenMarkovActor(@transient ctx:RequestContext) extends TrainActor(ctx) {
     val model = HiddenMarkovTrainer.train(hstates,ostates,dataset,epsilon,iterations)
     
     val now = new java.util.Date()
-    val dir = String.format("""%s/model/%s/%s""",base,name,now.getTime().toString)
+    val store = String.format("""%s/model/%s/%s""",base,name,now.getTime().toString)
     
-    /* Save model in directory of file system */
-    model.save(dir)
-    
-    /* Put model to sink */
-    redis.addModel(req,dir)
+    MarkovIO.writeHM(store,model)
+    redis.addPath(req,store)
  
   }
   

@@ -19,29 +19,13 @@ package de.kp.spark.intent.markov
 */
 
 import de.kp.scala.hmm.{HmmPredictor,HmmModel,HmmTrainer}
-import de.kp.spark.intent.markov.hadoop.HadoopIO
 
-class HiddenMarkovModel {
-
-  private var hStates:Map[Int,String] = null
-  private var oStates:Map[String,Int] = null
-  
-  private var model:HmmModel = null
-  
-  def this(model:HmmModel,hStates:Map[Int,String],oStates:Map[String,Int]) {
-     this() 
-  
-     this.hStates = hStates
-     this.oStates = oStates
-  
-     this.model = model
-     
-  }
-  
+class HiddenMarkovModel(val hstates:Map[Int,String],val ostates:Map[String,Int],val hmm:HmmModel) {
+ 
   def predict(observations:Array[String]):Array[String] = {
 
     /* Transform String representation of observations into Integer representation */
-    val intObservations = observations.map(o => oStates(o))
+    val intObservations = observations.map(o => ostates(o))
 
     /*
      * Predict the most likely sequence of hidden states for the given model and
@@ -51,19 +35,11 @@ class HiddenMarkovModel {
      * for large observation sequences.
      */
     val scaled = false
-    val hiddenStates = HmmPredictor.predict(model,intObservations,scaled)
+    val hiddenStates = HmmPredictor.predict(hmm,intObservations,scaled)
 
     /* Transform Integer representation of hidden states into String representation */
-    hiddenStates.map(h => hStates(h))
+    hiddenStates.map(h => hstates(h))
     
-  }
-
-  def save(path:String) {
-    HadoopIO.writeHMM(hStates,oStates,model,path)
-  }
-  
-  def load(path:String) {
-    val (hStates,oStates,model) = HadoopIO.readHMM(path)
   }
   
 }
@@ -91,7 +67,7 @@ class HiddenMarkovTrainer(hiddenStates:Array[String],observableStates:Array[Stri
     val intObservations = observations.map(o => intOStates(o))
     
     val model = HmmTrainer.trainBaumWelch(numHStates, numOStates, intObservations, epsilon, maxIterations)
-    new HiddenMarkovModel(model,intHStates,intOStates)
+    new HiddenMarkovModel(intHStates,intOStates,model)
     
   }
 

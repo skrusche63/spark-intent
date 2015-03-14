@@ -3,18 +3,18 @@ package de.kp.spark.intent.model
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
-import de.kp.spark.intent.Configuration
+import de.kp.spark.core.redis.RedisDB
+import de.kp.spark.intent.{Configuration,MarkovIO}
 
 import de.kp.spark.intent.markov._
 import de.kp.spark.intent.model._
 
-import de.kp.spark.intent.sink.RedisSink
 import scala.collection.mutable.ArrayBuffer
 
 class MarkovPredictor(topic:String) extends IntentPredictor {
 
   private val (host,port) = Configuration.redis
-  private val sink = new RedisSink(host,port.toInt)
+  private val redis = new RedisDB(host,port.toInt)
 
   def predict(req:ServiceRequest):String = {
     
@@ -25,10 +25,8 @@ class MarkovPredictor(topic:String) extends IntentPredictor {
        */
       case "observation" => {
     
-        val path = sink.model(req)    
-        
-        val model = new HiddenMarkovModel()
-        model.load(path)
+        val store = redis.model(req)    
+        val model = MarkovIO.readHM(store)
         /*
          * The Hidden Markov Predictor is flexible with respect to the
          * provided combination of request parameters
@@ -66,8 +64,8 @@ class MarkovPredictor(topic:String) extends IntentPredictor {
        */
       case "state" => {
     
-        val model = sink.model(req)
-        val (scale,states,matrix) = new MarkovSerializer().deserialize(model)
+        val store = redis.path(req)
+        val (scale,states,matrix) = MarkovIO.readTM(store)
 
         /*
          * The number of steps, we have to look into the future, starting

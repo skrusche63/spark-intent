@@ -24,7 +24,7 @@ import de.kp.spark.core.model._
 import de.kp.spark.core.source.StateSource
 import de.kp.spark.core.source.handler.StateHandler
 
-import de.kp.spark.intent.RequestContext
+import de.kp.spark.intent.{MarkovIO,RequestContext}
 import de.kp.spark.intent.spec.StateSpec
 
 import de.kp.spark.intent.model._
@@ -35,6 +35,7 @@ import scala.collection.mutable.Buffer
 class MarkovActor(@transient ctx:RequestContext) extends TrainActor(ctx) {
 
   import ctx.sqlc.createSchemaRDD
+  private val base = ctx.config.markov  
   
   override def validate(req:ServiceRequest) {
 
@@ -115,10 +116,14 @@ class MarkovActor(@transient ctx:RequestContext) extends TrainActor(ctx) {
       table.saveAsParquetFile(store)  
       
     }
+
+    val name = req.data(Names.REQ_NAME) 
     
-    /* Put model to sink */
-    val model = new MarkovSerializer().serialize(scale,states,matrix)
-    redis.addModel(req,model)
+    val now = new java.util.Date()
+    val store = String.format("""%s/matrix/%s/%s""",base,name,now.getTime().toString)
+    
+    MarkovIO.writeTM(store,scale,states,matrix)
+    redis.addPath(req,store)
     
   }
 

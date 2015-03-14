@@ -21,17 +21,17 @@ package de.kp.spark.intent.actor
 import de.kp.spark.core.Names
 import de.kp.spark.core.model._
 
-import de.kp.spark.intent.Configuration
+import de.kp.spark.core.redis.RedisDB
+import de.kp.spark.intent.{Configuration,MarkovIO}
 
 import de.kp.spark.intent.model._
-import de.kp.spark.intent.sink.RedisSink
 
 class ModelQuestor extends BaseActor {
 
   implicit val ec = context.dispatcher
 
   private val (host,port) = Configuration.redis
-  private val sink = new RedisSink(host,port.toInt)
+  private val redis = new RedisDB(host,port.toInt)
   
   def receive = {
     
@@ -43,7 +43,7 @@ class ModelQuestor extends BaseActor {
       val Array(task,topic) = req.task.split(":")
       val response = try {
         
-        if (sink.modelExists(req) == false) {           
+        if (redis.pathExists(req) == false) {           
           failure(req,Messages.MODEL_DOES_NOT_EXIST(uid))
             
         } else {
